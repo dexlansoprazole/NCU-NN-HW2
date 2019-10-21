@@ -1,0 +1,41 @@
+{
+  "name": "hw2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron main.js",
+    "dist": "electron-builder -w --x64"
+  },
+  "author": "108522055",
+  "license": "ISC",
+  "dependencies": {
+    "bootstrap": "^4.3.1",
+    "d3": "^3.5.17",
+    "function-plot": "^1.19.1",
+    "jquery": "^3.4.1",
+    "electron-reload": "^1.5.0"
+  },
+  "devDependencies": {
+    "electron": "^6.0.12",
+    "electron-builder": "^21.2.0"
+  },
+  "build": {
+    "appId": "hw1",
+    "win": {
+      "target": [
+        "portable",
+        "zip"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "zip"
+      ]
+    },
+    "extraFiles": [
+      "./dataset"
+    ]
+  }
+}

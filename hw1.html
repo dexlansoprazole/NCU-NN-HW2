@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>MLP</title>
+  <link href="./styles/bootstrap.min.css" rel="stylesheet">
+  <link href="./styles/style.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1>NN HW2: MLP</h1>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <div class="dropdown">
+              <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Dataset
+              </button>
+              <div id="dropdown-menu-dataset" class="dropdown-menu">
+              </div>
+            </div>
+          </div>
+          <div class="custom-file">
+            <input type="file" class="custom-file-input" id="inputFile">
+            <label class="custom-file-label" id="inputFile-label">perceptron1.txt</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">Iterations</span>
+          </div>
+          <input id="in_iter" type="text" class="form-control" value="10000">
+        </div>
+      </div>
+      <div class="col">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">Learning Rate</span>
+          </div>
+          <input id="in_lr" type="text" class="form-control" value="0.5">
+        </div>
+      </div>
+      <div class="col">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">Threshold</span>
+          </div>
+          <input id="in_th" type="text" class="form-control" value="0.001">
+        </div>
+      </div>
+      <div class="col">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">Neurons</span>
+          </div>
+          <input id="in_nh" type="text" class="form-control" value="2">
+        </div>
+      </div>
+      <div class="col-2">
+        <button id="btnStart" class="btn btn-primary btn-block" type="button">Start</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col" id="col-range"></div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <div id="train" class="text-center"></div>
+      </div>
+      <div class="col">
+        <div id="test" class="text-center"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col">
+        <div class="row">
+          <div class="col">
+            <div id="acc_train" class="acc text-center"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="row">
+          <div class="col">
+            <div id="acc_test" class="acc text-center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" id="row-weights">
+    </div>
+  </div>
+
+  <script>
+    window.$ = window.jQuery = require('jquery');
+    require("./node_modules/bootstrap/dist/js/bootstrap.bundle.min.js");
+  </script>
+  <script src="./hw1.js"></script>
+</body>
+
+</html>
