@@ -18,38 +18,6 @@ function plot2d_mlp(dataset, fn, fn_final, y_trans) {
       domain: [-0.5, 1.5]
     },
     data: [{
-      points: dataset.train.filter(function (v) { return v[2] == 0 }),
-      fnType: 'points',
-      graphType: 'scatter',
-      attr: {
-        r: 3
-      }
-    }, {
-      points: dataset.train.filter(function (v) { return v[2] == 1 }),
-      fnType: 'points',
-      graphType: 'scatter',
-      attr: {
-        r: 3
-      }
-    }, {
-      points: y_trans.train.filter(function (v) { return v[2] == 0 }),
-      fnType: 'points',
-      graphType: 'scatter',
-      attr: {
-        r: 3,
-        fill: '#0000ff',
-        stroke: '#0000ff'
-      }
-    }, {
-      points: y_trans.train.filter(function (v) { return v[2] == 1 }),
-      fnType: 'points',
-      graphType: 'scatter',
-      attr: {
-        r: 3,
-        fill: '#ff0000',
-        stroke: '#ff0000'
-      }
-    }, {
       fn: fn,
       fnType: 'implicit',
       color: 'rgb(0, 204, 102)'
@@ -75,38 +43,6 @@ function plot2d_mlp(dataset, fn, fn_final, y_trans) {
       domain: [-0.5, 1.5]
     },
     data: [{
-      points: dataset.test.filter(function (v) { return v[2] == 0 }),
-      fnType: 'points',
-      graphType: 'scatter',
-      attr: {
-        r: 3
-      }
-    }, {
-      points: dataset.test.filter(function (v) { return v[2] == 1 }),
-      fnType: 'points',
-      graphType: 'scatter',
-      attr: {
-        r: 3
-      }
-    }, {
-      points: y_trans.test.filter(function (v) { return v[2] == 0 }),
-      fnType: 'points',
-      graphType: 'scatter',
-      attr: {
-        r: 3,
-        fill: '#0000ff',
-        stroke: '#0000ff'
-      }
-    }, {
-      points: y_trans.test.filter(function (v) { return v[2] == 1 }),
-      fnType: 'points',
-      graphType: 'scatter',
-      attr: {
-        r: 3,
-        fill: '#ff0000',
-        stroke: '#ff0000'
-      }
-    }, {
       fn: fn,
       fnType: 'implicit',
       color: 'rgb(0, 204, 102)'
@@ -116,6 +52,52 @@ function plot2d_mlp(dataset, fn, fn_final, y_trans) {
       color: "rgba(0, 204, 102, 0.3)",
     }]
   }
+
+  let classes = [...new Set(dataset.train.concat(dataset.test).map(function (v) { return v[v.length - 1] }))];
+  for(let i = 0; i < classes.length; i++){
+    // options_train.data.push({
+    //   points: dataset.train.filter(function (v) { return v[v.length - 1] == classes[i] }),
+    //   fnType: 'points',
+    //   graphType: 'scatter',
+    //   attr: {
+    //     r: 3
+    //   }
+    // });
+
+    options_train.data.push({
+      points: y_trans.train.filter(function (v) { return v[v.length - 1] == classes[i] }),
+      fnType: 'points',
+      graphType: 'scatter',
+      attr: {
+        r: 3,
+        opacity: 1,
+        // fill: '#0000ff',
+        // stroke: '#0000ff'
+      }
+    });
+
+    // options_test.data.push({
+    //   points: dataset.test.filter(function (v) { return v[v.length - 1] == classes[i] }),
+    //   fnType: 'points',
+    //   graphType: 'scatter',
+    //   attr: {
+    //     r: 3
+    //   }
+    // });
+
+    options_test.data.push({
+      points: y_trans.test.filter(function (v) { return v[v.length - 1] == classes[i] }),
+      fnType: 'points',
+      graphType: 'scatter',
+      attr: {
+        r: 3,
+        opacity: 1,
+        // fill: '#0000ff',
+        // stroke: '#0000ff'
+      }
+    });
+  }
+
   let plot_train = functionPlot(options_train);
   let plot_test = functionPlot(options_test);
   plot_train.addLink(plot_test);

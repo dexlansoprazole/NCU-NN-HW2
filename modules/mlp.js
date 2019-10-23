@@ -1,5 +1,7 @@
 class MLP {
   constructor(ni, nh, no) {
+    this.ws = null;
+
     this.ni = ni + 1;
     this.nh = nh + 1;
     this.no = no;
@@ -113,51 +115,57 @@ class MLP {
 
     var error = 0.0;
     for (var k = 0; k < targets.length; k++)
-      error = error + 0.5 * Math.pow(targets[k] - this.ao[k], 2);
+      error += 0.5 * Math.pow(targets[k] - this.ao[k], 2);
     return error;
   }
 
   test(data, wi, wo) {
-    let total_loss = 0;
-    let accuracy = 0.0;
+    let acc = 0.0;
+    let rmse = 0.0;
+    let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
     data.forEach(function (data) {
       let inputs = data.slice(0, -1);
       let targets = data.slice(-1);
       let e = targets[0] - this.update(inputs, wi, wo)[0];
-      total_loss += e * e;
-      if (targets[0].toFixed(0) == this.update(inputs, wi, wo)[0].toFixed(0))
-        accuracy += 1;
+      rmse += e * e;
+
+      if (Math.abs(e) < 1/ (classes.length - 1) / 2){
+        // console.log(this.update(inputs, wi, wo)[0], targets[0], "correct");
+        acc += 1;
+      }else{
+        // console.log(this.update(inputs, wi, wo)[0], targets[0], "fail");
+      }
     }, this);
-    total_loss /= data.length;
-    accuracy /= data.length;
-    return accuracy;
+    acc /= data.length;
+    rmse /= data.length;
+    rmse = Math.sqrt(rmse);
+    return {acc: acc, rmse: rmse};
   }
 
   train(data, iterations, learning_rate, threshold) {
-    let ws = new Array();
-    ws.push(this.get_weights())
+    this.ws = new Array();
+    this.ws.push(this.get_weights())
     for (var n = 0; n < iterations; n++) {
-      var total_loss = 0.0;
+      var mse = 0.0;
       data.forEach(function (data) {
         let inputs = data.slice(0, -1);
         let targets = data.slice(-1);
         let outputs = this.update(inputs);
-        total_loss += this.backPropagate(targets, learning_rate);
+        mse += this.backPropagate(targets, learning_rate);
       }, this);
-      total_loss /= data.length;
-      if (total_loss < threshold) {
-        ws.push(this.get_weights())
-        console.log("total_loss_train #%d: %f", n, total_loss);
-        return ws;
+      mse /= data.length;
+      if (mse < threshold) {
+        this.ws.push(this.get_weights());
+        console.log("MSE_Train #%d: %f", n, mse);
+        return;
       }
       if (n % 100 == 0) {
-          ws.push(this.get_weights())
-        console.log("total_loss_train #%d: %f", n, total_loss);
+        this.ws.push(this.get_weights());
+        console.log("MSE_Train #%d: %f", n, mse);
       }
     }
-    ws.push(this.get_weights())
-    console.log("total_loss_train #%d: %f", n, total_loss);
-    return ws;
+    this.ws.push(this.get_weights());
+    console.log("MSE_Train #%d: %f", n, mse);
   }
 
   get_weights() {

@@ -3,7 +3,6 @@ var MLP = require('./modules/mlp');
 var plot = require('./modules/plot');
 
 var dataset = null;
-var ws = null;
 
 $(document).ready(function () {
   function loadData(rawText) {
@@ -27,9 +26,10 @@ $(document).ready(function () {
     let train = new Array();
     let test = new Array();
     if (data.length > 4) {
-      let data_c = [new Array(), new Array()];
-      data_c[0] = data.filter(function (v) { return v[2] == 0 });
-      data_c[1] = data.filter(function (v) { return v[2] == 1 });
+      let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
+      let data_c = [];
+      for(let i = 0;i < classes.length; i++)
+        data_c.push(data.filter(function (v) { return v[v.length - 1] == classes[i] }));
       // Split data for each class
       for (let k = 0; k < data_c.length; k++) {
         var nums = Array.from(Array(Math.round(data_c[k].length)).keys()),
@@ -61,16 +61,18 @@ $(document).ready(function () {
     let lr = parseFloat($('#in_lr').val());
     let th = parseFloat($('#in_th').val());
     let nh = parseInt($('#in_nh').val());
-    let data_out = [...new Set(data.map(function (v) { return v[2] }))];
-    console.log('class_ori: %o', data_out);
-    if (data_out[0] != 0 || data_out[1] != 1) {
-      for (let i = 0; i < data.length; i++) {
-        if (data[i][2] == data_out[0])
-          data[i][2] = 0;
-        else
-          data[i][2] = 1;
+    let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
+    console.log('class_ori: %o', classes);
+    // Normalization
+    for (let i = 0; i < data.length; i++) {
+      for(let j = 0; j < classes.length; j++){
+        if(data[i][data[i].length-1] == classes[j]){
+          data[i][data[i].length-1] = j / (classes.length - 1);
+          break;
+        }
       }
     }
+
     dataset = splitData(data);
     console.log('data: %o', data);
     console.log('dataset: %o', dataset);
@@ -79,11 +81,10 @@ $(document).ready(function () {
     net = new MLP(input_size, nh, output_size);
     draw = draw_mlp;
 
-    ws = net.train(dataset.train, iter, lr, th);
-    let w = ws.slice(-1)[0]
-    console.log("w=%o", w);
-    draw(net, ws.length - 1);
-    $range = $($.parseHTML('<input class="range" id="range" type="range" min="0" max="' + (ws.length - 1) + '" step="1" value="' + (ws.length - 1) + '">'));
+    net.train(dataset.train, iter, lr, th);
+    console.log("w=%o", net.ws.slice(-1)[0]);
+    draw(net, net.ws.length - 1);
+    $range = $($.parseHTML('<input class="range" id="range" type="range" min="0" max="' + (net.ws.length - 1) + '" step="1" value="' + (net.ws.length - 1) + '">'));
     $range.on('input', function () {
       draw(net, $range.val())
     });
@@ -95,10 +96,10 @@ $(document).ready(function () {
 })
 
 function draw_mlp(net, i_frame) {
-  let w = ws[i_frame];
+  let w = net.ws[i_frame];
   let wi = w.wi;
   let wo = w.wo;
-  let wof = ws[ws.length - 1].wo;
+  let wof = net.ws[net.ws.length - 1].wo;
   let y_trans = {
     train: new Array(),
     test: new Array()
