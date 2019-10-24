@@ -1,5 +1,6 @@
 window.d3 = require('d3');
 const functionPlot = require('function-plot');
+const colormap = require('colormap');
 
 function plot2d_mlp(dataset, fn, fn_final, y_trans) {
   let width = $('#train').width();
@@ -54,15 +55,35 @@ function plot2d_mlp(dataset, fn, fn_final, y_trans) {
   }
 
   let classes = [...new Set(dataset.train.concat(dataset.test).map(function (v) { return v[v.length - 1] }))];
+  let colors = colormap({
+    colormap: 'rainbow',
+    nshades: 50,
+    format: 'hex',
+    alpha: 1
+  });
   for(let i = 0; i < classes.length; i++){
-    // options_train.data.push({
-    //   points: dataset.train.filter(function (v) { return v[v.length - 1] == classes[i] }),
-    //   fnType: 'points',
-    //   graphType: 'scatter',
-    //   attr: {
-    //     r: 3
-    //   }
-    // });
+    options_train.data.push({
+      points: dataset.train.filter(function (v) { return v[v.length - 1] == classes[i] }),
+      fnType: 'points',
+      graphType: 'scatter',
+      attr: {
+        opacity: 0.3,
+        fill: colors[i * 10],
+        stroke: colors[i * 10],
+        r: 3,
+      }
+    });
+    options_test.data.push({
+      points: dataset.test.filter(function (v) { return v[v.length - 1] == classes[i] }),
+      fnType: 'points',
+      graphType: 'scatter',
+      attr: {
+        opacity: 0.3,
+        fill: colors[i * 10],
+        stroke: colors[i * 10],
+        r: 3,
+      }
+    });
 
     options_train.data.push({
       points: y_trans.train.filter(function (v) { return v[v.length - 1] == classes[i] }),
@@ -71,20 +92,10 @@ function plot2d_mlp(dataset, fn, fn_final, y_trans) {
       attr: {
         r: 3,
         opacity: 1,
-        // fill: '#0000ff',
-        // stroke: '#0000ff'
+        fill: colors[i * 10],
+        stroke: colors[i * 10]
       }
     });
-
-    // options_test.data.push({
-    //   points: dataset.test.filter(function (v) { return v[v.length - 1] == classes[i] }),
-    //   fnType: 'points',
-    //   graphType: 'scatter',
-    //   attr: {
-    //     r: 3
-    //   }
-    // });
-
     options_test.data.push({
       points: y_trans.test.filter(function (v) { return v[v.length - 1] == classes[i] }),
       fnType: 'points',
@@ -92,8 +103,8 @@ function plot2d_mlp(dataset, fn, fn_final, y_trans) {
       attr: {
         r: 3,
         opacity: 1,
-        // fill: '#0000ff',
-        // stroke: '#0000ff'
+        fill: colors[i * 10],
+        stroke: colors[i * 10]
       }
     });
   }
