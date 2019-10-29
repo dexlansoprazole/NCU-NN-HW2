@@ -19,6 +19,7 @@ document.addEventListener("keydown", function(e) {
 
 $('#btnStart').click(function () {
   clear();
+  toggleLoading();
   let iter = parseInt($('#in_iter').val());
   let lr = parseFloat($('#in_lr').val());
   let th = parseFloat($('#in_th').val());
@@ -107,7 +108,6 @@ function updateResult(res_plots, res_results, i_frame=0) {
       $list_wo.append($wo);
     }
   }
-  toggleLoading();
 }
 
 function toggleLoading() {
@@ -124,4 +124,5 @@ ipcRenderer.on('finished', function(evt, arg){
   $range.focus();
 
   updateResult(arg.plot, arg.result, 0);
+  toggleLoading();
 });
