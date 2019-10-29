@@ -78,12 +78,19 @@ function main(evt, data, iter, lr, th, nh) {
   let w = net.ws[net.ws.length - 1];
   console.log("w=%o", w);
 
-  let res_plot = null;
-  if (net.ni == 3 && net.nh == 3)
-    res_plot = mlp_res_plot(net, net.ws.length - 1);
-  let res_result = [w, mlp_res_result(net, net.ws.length - 1)];
+  let res_plots = null;
+  let res_results = new Array();
+  if (net.ni == 3 && net.nh == 3){
+    res_plots = new Array();
+    for(let i = 0; i <　net.ws.length; i++){
+      res_plots.push(mlp_res_plot(net, i));
+    }
+  }
+  for(let i = 0; i <　net.ws.length; i++){
+    res_results.push({w: net.ws[i], res_test: mlp_res_result(net, i)});
+  }
 
-  evt.sender.send('updateResult', {net: net, plot: res_plot, result: res_result});
+  evt.sender.send('finished', {plot: res_plots, result: res_results});
 }
 
 function mlp_res_plot(net, i_frame) {
@@ -151,17 +158,4 @@ ipcMain.on('input', function(evt, arg) {
 
 ipcMain.on('start', function(evt, arg) {
   main(evt, ...arg);
-});
-
-ipcMain.on('update', function(evt, arg) {
-  console.log(arg);
-  
-  let net = arg[0];
-  let i_frame = arg[1];
-  let w = net.ws[i_frame];
-  let res_plot = null;
-  if (net.ni == 3 && net.nh == 3)
-    res_plot = mlp_res_plot(net, i_frame);
-  let res_result = [w, mlp_res_result(net, i_frame)];
-  evt.sender.send('updateResult', {net: net, plot: res_plot, result: res_result});
 });

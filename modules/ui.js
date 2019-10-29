@@ -9,8 +9,6 @@ let fileString = fs.readFileSync(dataset_path, "UTF-8");
 data = ipcRenderer.sendSync('input', fileString);
 console.log(data);
 
-// data = dataHandler(fileString);
-
 document.addEventListener("keydown", function(e) {
   if (e.which === 123) {
     require('electron').remote.getCurrentWindow().toggleDevTools();
@@ -26,7 +24,6 @@ $('#btnStart').click(function () {
   let th = parseFloat($('#in_th').val());
   let nh = parseInt($('#in_nh').val());
   ipcRenderer.send('start', [data, iter, lr, th, nh]);
-  // main(data);
 });
 
 $('#inputFile').change(function () {
@@ -37,7 +34,6 @@ $('#inputFile').change(function () {
     $('#inputFile').val('');
     let fileString = fs.readFileSync(dataset_path, "UTF-8");
     data = ipcRenderer.sendSync('input', fileString);
-    // data = dataHandler(fileString);
   }
 });
 
@@ -50,7 +46,6 @@ fs.readdir(path_dir, function (err, items) {
       dataset_path = $(this).attr('filepath');
       let fileString = fs.readFileSync(dataset_path, "UTF-8");
       data = ipcRenderer.sendSync('input', fileString);
-      // data = dataHandler(fileString);
       $('#inputFile-label').html($(this).attr('filename'));
 
     });
@@ -67,17 +62,21 @@ function clear() {
   $('#row-weights').children().remove();
 }
 
-function updateResult(net, w, res_test) {
+function updateResult(res_plots, res_results, i_frame=0) {
+  // update plot
+  if (res_plots != null)
+    plot.plot2d_mlp(...res_plots[i_frame]);
+  else{
+    $('#train').html('<h3>Train</h3>');
+    $('#test').html('<h3>Test</h3>');
+  }
+
+  // update ACC, RMSE and weights
+  let w = res_results[i_frame].w;
+  let res_test = res_results[i_frame].res_test;
   let wi = w.wi;
   let wo = w.wo;
   $('#row-weights').children().remove();
-
-  $range = $($.parseHTML('<input class="range" id="range" type="range" min="0" max="' + (net.ws.length - 1) + '" step="1" value="' + (net.ws.length - 1) + '">'));
-  $range.on('input', function () {
-    ipcRenderer.send('update', [net, $range.val()]);
-  });
-  $('#col-range').html($range);
-  $range.focus();
 
   $('#acc_train').html('Accuracy: ' + res_test.trainSet.acc.toFixed(6));
   $('#rmse_train').html('RMSE: ' + res_test.trainSet.rmse.toFixed(6));
@@ -116,21 +115,13 @@ function toggleLoading() {
   $("#spinner-start").toggleClass('d-none');
 }
 
-ipcRenderer.on('updateResult', function(evt, arg){
-  console.log(arg.net);
-  if (arg.plot != null)
-    plot.plot2d_mlp(...arg.plot);
-  else{
-    $('#train').html('<h3>Train</h3>');
-    $('#test').html('<h3>Test</h3>');
-  }
-  arg.net.sigmoid(0);
-  updateResult(arg.net, ...arg.result);
-});
+ipcRenderer.on('finished', function(evt, arg){
+  $range = $($.parseHTML('<input class="range" id="range" type="range" min="0" max="' + (arg.result.length - 1) + '" step="1" value="' + (arg.result.length - 1) + '">'));
+  $range.on('input', function () {
+    updateResult(arg.plot, arg.result, $range.val());
+  });
+  $('#col-range').html($range);
+  $range.focus();
 
-// module.exports = {
-//   init: init,
-//   clear: clear,
-//   updateResult: updateResult,
-//   toggleLoading: toggleLoading
-// }
+  updateResult(arg.plot, arg.result, 0);
+});
