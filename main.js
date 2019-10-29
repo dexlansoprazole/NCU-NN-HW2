@@ -1,38 +1,55 @@
-// Modules to control application life and create native browser window
 const { app, BrowserWindow, Menu, ipcMain } = require('electron')
 const path = require('path')
 require('electron-reload')(__dirname);
-require('./hw1.js')
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
+let mainWindow, workerWindow
 
 function createWindow() {
   Menu.setApplicationMenu(null)
-
-  // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
-    webPreferences: {
-      nodeIntegration: true
-    }
+    webPreferences: { nodeIntegration: true }
   })
-
-  // and load the index.html of the app.
-  mainWindow.loadFile('hw1.html')
-
-  // Open the DevTools.
+  mainWindow.loadFile('ui.html')
   mainWindow.webContents.openDevTools()
 
-  // Emitted when the window is closed.
+  workerWindow = new BrowserWindow({
+    show: false,
+    webPreferences: { nodeIntegration: true }
+  });
+  workerWindow.loadFile('worker.html');
+  
   mainWindow.on('closed', function () {
-    mainWindow = null
+    mainWindow = null;
+    if(workerWindow != null)
+      workerWindow.close();
+  })
+
+  workerWindow.on('closed', () => {
+    workerWindow = null;
   })
 }
 
-app.on('ready', createWindow)
+app.on('ready', function() {
+  ipcMain.on('log', (evt, arg) => {
+    mainWindow.webContents.send('log', arg);
+  })
+  ipcMain.on('input', (evt, arg) => {
+    workerWindow.webContents.send('input', arg);
+  })
+  ipcMain.on('input_res', (evt, arg) => {
+    mainWindow.webContents.send('input_res', arg);
+  })
+  ipcMain.on('start', (evt, arg) => {
+    workerWindow.webContents.send('start', arg);
+  })
+  ipcMain.on('finished', (evt, arg) => {
+    mainWindow.webContents.send('finished', arg);
+  })
+  
+  createWindow();
+})
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()

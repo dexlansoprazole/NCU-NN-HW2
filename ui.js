@@ -4,10 +4,18 @@ const fs = require('fs');
 const plot = require('./modules/plot');
 var isLoading = false;
 var dataset_path = './dataset/perceptron1.txt';
-let data = null;
+var data = null;
+
+ipcRenderer.on('log', function(evt, arg){
+  console.log(...arg);
+});
+
 let fileString = fs.readFileSync(dataset_path, "UTF-8");
-data = ipcRenderer.sendSync('input', fileString);
-console.log(data);
+ipcRenderer.send('input', fileString);
+ipcRenderer.on('input_res', function(evt, arg){
+  data = arg;
+  console.log(data);
+});
 
 document.addEventListener("keydown", function(e) {
   if (e.which === 123) {
@@ -24,7 +32,8 @@ $('#btnStart').click(function () {
   let lr = parseFloat($('#in_lr').val());
   let th = parseFloat($('#in_th').val());
   let nh = parseInt($('#in_nh').val());
-  ipcRenderer.send('start', [data, iter, lr, th, nh]);
+  if(data != null)
+    ipcRenderer.send('start', [data, iter, lr, th, nh]);
 });
 
 $('#inputFile').change(function () {
@@ -34,7 +43,7 @@ $('#inputFile').change(function () {
     dataset_path = inputFile.path;
     $('#inputFile').val('');
     let fileString = fs.readFileSync(dataset_path, "UTF-8");
-    data = ipcRenderer.sendSync('input', fileString);
+    ipcRenderer.send('input', fileString);
   }
 });
 
@@ -46,7 +55,7 @@ fs.readdir(path_dir, function (err, items) {
       inputFile = [];
       dataset_path = $(this).attr('filepath');
       let fileString = fs.readFileSync(dataset_path, "UTF-8");
-      data = ipcRenderer.sendSync('input', fileString);
+      ipcRenderer.send('input', fileString);
       $('#inputFile-label').html($(this).attr('filename'));
 
     });
@@ -123,6 +132,6 @@ ipcRenderer.on('finished', function(evt, arg){
   $('#col-range').html($range);
   $range.focus();
 
-  updateResult(arg.plot, arg.result, 0);
+  updateResult(arg.plot, arg.result, arg.result.length - 1);
   toggleLoading();
 });

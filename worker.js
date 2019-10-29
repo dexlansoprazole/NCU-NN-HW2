@@ -1,8 +1,8 @@
-const ipcMain = require('electron').ipcMain;
+const ipcRenderer = require('electron').ipcRenderer;
 const MLP = require('./modules/mlp');
+const logger = require('./modules/logger');
 
 var dataset = null;
-
 function loadData(rawText) {
   let data = new Array();
   var lines = rawText.split("\n");
@@ -56,7 +56,7 @@ function splitData(data) {
 function main(evt, data, iter, lr, th, nh) {
   let draw = null;
   let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
-  console.log('class_ori: %o', classes);
+  logger('class_ori: %o', classes);
   // Normalization
   for (let i = 0; i < data.length; i++) {
     for(let j = 0; j < classes.length; j++){
@@ -68,15 +68,15 @@ function main(evt, data, iter, lr, th, nh) {
   }
 
   dataset = splitData(data);
-  console.log('data: %o', data);
-  console.log('dataset: %o', dataset);
+  logger('data: %o', data);
+  logger('dataset: %o', dataset);
   let output_size = 1;
   let input_size = dataset.train[0].length - output_size;
   let net = new MLP(input_size, nh, output_size);
   // ui.toggleLoading();
   net.train(dataset.train, iter, lr, th);
   let w = net.ws[net.ws.length - 1];
-  console.log("w=%o", w);
+  logger("w=%o", w);
 
   let res_plots = null;
   let res_results = new Array();
@@ -152,10 +152,10 @@ function mlp_res_result(net, i_frame){
   return {trainSet: res_test_trainSet, testSet: res_test_testSet};
 }
 
-ipcMain.on('input', function(evt, arg) {
-  evt.returnValue = loadData(arg);
+ipcRenderer.on('input', function(evt, arg) {
+  evt.sender.send('input_res', loadData(arg));
 });
 
-ipcMain.on('start', function(evt, arg) {
+ipcRenderer.on('start', function(evt, arg) {
   main(evt, ...arg);
 });

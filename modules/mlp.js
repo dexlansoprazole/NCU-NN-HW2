@@ -1,3 +1,5 @@
+const logger = require('./logger');
+
 class MLP {
   constructor(ni, nh, no) {
     this.ws = null;
@@ -130,10 +132,10 @@ class MLP {
       rmse += e * e;
 
       if (Math.abs(e) < 1/ (classes.length - 1) / 2){
-        // console.log(this.update(inputs, wi, wo)[0], targets[0], "correct");
+        // logger(this.update(inputs, wi, wo)[0], targets[0], "correct");
         acc += 1;
       }else{
-        // console.log(this.update(inputs, wi, wo)[0], targets[0], "fail");
+        // logger(this.update(inputs, wi, wo)[0], targets[0], "fail");
       }
     }, this);
     acc /= data.length;
@@ -156,16 +158,16 @@ class MLP {
       mse /= data.length;
       if (mse < threshold) {
         this.ws.push(this.get_weights());
-        console.log("MSE_Train #%d: %f", n, mse);
+        logger("MSE_Train #%d: %f", n, mse);
         return;
       }
       if (n % 100 == 0) {
         this.ws.push(this.get_weights());
-        console.log("MSE_Train #%d: %f", n, mse);
+        logger("MSE_Train #%d: %f", n, mse);
       }
     }
     this.ws.push(this.get_weights());
-    console.log("MSE_Train #%d: %f", n, mse);
+    logger("MSE_Train #%d: %f", n, mse);
   }
 
   get_weights() {
