@@ -125,19 +125,17 @@ class MLP {
     let acc = 0.0;
     let rmse = 0.0;
     let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
-    data.forEach(function (data) {
-      let inputs = data.slice(0, -1);
-      let targets = data.slice(-1);
+    for(let i = 0; i < data.length; i++){
+      let inputs = data[i].slice(0, -1);
+      let targets = data[i].slice(-1);
       let e = targets[0] - this.update(inputs, wi, wo)[0];
       rmse += e * e;
 
-      if (Math.abs(e) < 1/ (classes.length - 1) / 2){
-        // logger(this.update(inputs, wi, wo)[0], targets[0], "correct");
+      if (Math.abs(e) < 1/ (classes.length - 1) / 2)
         acc += 1;
-      }else{
-        // logger(this.update(inputs, wi, wo)[0], targets[0], "fail");
-      }
-    }, this);
+
+      // logger('test #%d\n\toutput: %o\n\ttarget: %o', i, this.update(inputs, wi, wo)[0].toFixed(3), targets[0]);
+    }
     acc /= data.length;
     rmse /= data.length;
     rmse = Math.sqrt(rmse);
