@@ -64,8 +64,8 @@ fs.readdir(path_dir, function (err, items) {
 });
 
 function clear() {
-  $("#train").children().remove();
-  $("#test").children().remove();
+  $("#plot-train").children().remove();
+  $("#plot-test").children().remove();
   $(".acc").html('');
   $(".rmse").html('');
   $(".range").remove();
@@ -77,8 +77,8 @@ function updateResult(res_plots, res_results, i_frame=0) {
   if (res_plots != null)
     plot.plot2d_mlp(...res_plots[i_frame]);
   else{
-    $('#train').html('<h3>Train</h3>');
-    $('#test').html('<h3>Test</h3>');
+    $('#plot-train').html('<h3>Train</h3>');
+    $('#plot-test').html('<h3>Test</h3>');
   }
 
   // update ACC, RMSE and weights
