@@ -16,7 +16,7 @@
       <h1>NN HW2: MLP</h1>
     </div>
 
-    <div class="row">
+    <div class="row align-items-center">
       <div class="col">
         <div class="input-group">
           <div class="input-group-prepend">
@@ -77,11 +77,25 @@
       </div>
     </div>
 
+    <div class="row d-none" id="row-num">
+      <div class="col">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">Input</span>
+          </div>
+          <input id="in_num" type="text" class="form-control" value="11111100011000110001111110">
+        </div>
+      </div>
+      <div class="col-2">
+        <button id="btnTest" class="btn btn-warning btn-block" type="button">Test</button>
+      </div>
+    </div>
+
     <div class="row">
-      <div class="col" id="col-plot-train">
+      <div class="col-6" id="col-plot-train">
         <div id="plot-train" class="text-center"></div>
       </div>
-      <div class="col" id="col-plot-test">
+      <div class="col-6" id="col-plot-test">
         <div id="plot-test" class="text-center"></div>
       </div>
     </div>
@@ -114,8 +128,13 @@
       <div class="col" id="col-range"></div>
     </div>
 
-    <div class="row" id="row-weights">
+    <div class="row justify-content-center">
+      <div class="col-6" id="col-plot-num">
+        <div id="plot-num" class="text-center"></div>
+      </div>
     </div>
+
+    <div class="row" id="row-weights"></div>
 
     <div class="modal fade" id="modal-loading">
         <div class="modal-dialog modal-dialog-centered">

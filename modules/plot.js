@@ -129,8 +129,66 @@ function plot2d_mlp_test(dataset, fn, fn_final, y_trans) {
   return functionPlot(options_test);
 }
 
+function gridData(width, height, row, col, stroke, data) {
+  let res = new Array();
+  let xpos = stroke;
+  let ypos = stroke;
+  let width_block = (width - stroke * (col + 1)) / col;
+  let height_block = (height - stroke * (row + 1)) / row;;
+
+  for (let i = 0; i < row; i++) {
+    res.push( new Array() );
+    for (let j = 0; j < col; j++) {
+      let enable = null;
+      if (data[i * col + j] == 1)
+        enable = true;
+      else
+        enable = false;
+      res[i].push({
+          x: xpos,
+          y: ypos,
+          width: width_block,
+          height: height_block,
+          enable: enable
+      })
+      xpos += width_block;
+    }
+    xpos = stroke;
+    ypos += height_block; 
+  }
+  return res;
+}
+
+function plot_number(datas) {
+  let width = $('#plot-test').width();
+  for(let i = 0; i < datas.length; i++){
+    let data = datas[i];
+    var gd = gridData(width, width, 5, 5, 1, data);
+    var grid = d3.select('#carouse-item-' + i)
+      .append("svg")
+      .attr("class", "d-block w-100")
+      .attr("width", width)
+      .attr("height", width);
+    var row = grid.selectAll(".row")
+      .data(gd)
+      .enter().append("g")
+      .attr("class", "row");
+    var column = row.selectAll(".square")
+      .data(function(d) { return d; })
+      .enter().append("rect")
+      .attr("class","square")
+      .attr("x", function(d) { return d.x; })
+      .attr("y", function(d) { return d.y; })
+      .attr("width", function(d) { return d.width; })
+      .attr("height", function(d) { return d.height; })
+      .style("fill", function(d) { return d.enable?"#000":"#fff"; })
+      .style("stroke", "#ccc");
+  }
+}
+
 module.exports = {
   plot2d_mlp: plot2d_mlp,
   plot2d_mlp_train: plot2d_mlp_train,
-  plot2d_mlp_test: plot2d_mlp_test
+  plot2d_mlp_test: plot2d_mlp_test,
+  plot_number: plot_number
 }

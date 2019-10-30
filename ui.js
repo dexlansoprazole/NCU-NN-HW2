@@ -2,7 +2,7 @@ const ipcRenderer = require('electron').ipcRenderer;
 const path = require('path')
 const fs = require('fs');
 const plot = require('./modules/plot');
-var isLoading = false;
+var isNumber = false;
 var dataset_path = './dataset/perceptron1.txt';
 var data = null;
 
@@ -44,6 +44,11 @@ $('#inputFile').change(function () {
     $('#inputFile').val('');
     let fileString = fs.readFileSync(dataset_path, "UTF-8");
     ipcRenderer.send('input', fileString);
+
+    if(inputFile.name == 'Number.txt')
+      isNumber = true;
+    else
+      isNumber = false;
   }
 });
 
@@ -52,12 +57,16 @@ fs.readdir(path_dir, function (err, items) {
   items.forEach(item => {
     $dropdown_item_dataset = $($.parseHTML('<a class="dropdown-item dropdown-item-dataset" href="#" filename="' + item + '" filepath="' + path.join(path_dir, item) + '">' + item.slice(0, -4) + '</a>'));
     $dropdown_item_dataset.click(function () {
+      $('#inputFile-label').html($(this).attr('filename'));
       inputFile = [];
       dataset_path = $(this).attr('filepath');
       let fileString = fs.readFileSync(dataset_path, "UTF-8");
       ipcRenderer.send('input', fileString);
-      $('#inputFile-label').html($(this).attr('filename'));
 
+      if($(this).attr('filename') == 'Number.txt')
+        isNumber = true;
+      else
+        isNumber = false;
     });
     $('#dropdown-menu-dataset').append($dropdown_item_dataset);
   });
@@ -66,19 +75,46 @@ fs.readdir(path_dir, function (err, items) {
 function clear() {
   $("#plot-train").children().remove();
   $("#plot-test").children().remove();
+  $("#plot-num").children().remove();
   $(".acc").html('');
   $(".rmse").html('');
-  $(".range").remove();
   $('#row-weights').children().remove();
 }
 
 function updateResult(res_plots, res_results, i_frame=0) {
+  clear();
+
   // update plot
   if (res_plots != null)
     plot.plot2d_mlp(...res_plots[i_frame]);
   else{
     $('#plot-train').html('<h3>Train</h3>');
     $('#plot-test').html('<h3>Test</h3>');
+  }
+
+  if(isNumber){
+    // create carousel
+    let $carousel = $('<div id="carousel-num" class="carousel slide" data-ride="carousel"></div>');
+    let $carouselInner = $('<div class="carousel-inner"></div>');
+    let carouselItems = new Array();
+    for(let i = 0; i < data.length; i++){
+      let $carouselItem = $('<div class="carousel-item"  id="carouse-item-' + i + '"></div>');
+      if(i == 0)
+        $carouselItem.addClass('active');
+      carouselItems.push($carouselItem);
+    }
+    $carouselInner.append(carouselItems);
+
+    $carousel_control_prev = $('<a class="carousel-control-prev" href="#carousel-num" role="button" data-slide="prev"><span class="carousel-control-prev-icon"><span class="sr-only">Previous</span></span></a>');
+    $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
+    
+    $carousel.append($carouselInner);
+    $carousel.append($carousel_control_prev);
+    $carousel.append($carousel_control_next);
+    $('#plot-num').append($carousel);
+
+    // plot numbers
+    plot.plot_number(data);
   }
 
   // update ACC, RMSE and weights
@@ -120,12 +156,12 @@ function updateResult(res_plots, res_results, i_frame=0) {
 }
 
 function toggleLoading() {
-  isLoading = !isLoading;
   $("#spinner-start").toggleClass('d-none');
 }
 
 ipcRenderer.on('finished', function(evt, arg){
-  $range = $($.parseHTML('<input class="range" id="range" type="range" min="0" max="' + (arg.result.length - 1) + '" step="1" value="' + (arg.result.length - 1) + '">'));
+  $(".custom-range").remove();
+  $range = $($.parseHTML('<input class="custom-range" id="range" type="range" min="0" max="' + (arg.result.length - 1) + '" step="1" value="' + (arg.result.length - 1) + '">'));
   $range.on('input', function () {
     updateResult(arg.plot, arg.result, $range.val());
   });
