@@ -124,22 +124,27 @@ class MLP {
   test(data, wi, wo) {
     let acc = 0.0;
     let rmse = 0.0;
+    let results = new Array();
     let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
     for(let i = 0; i < data.length; i++){
       let inputs = data[i].slice(0, -1);
       let targets = data[i].slice(-1);
-      let e = targets[0] - this.update(inputs, wi, wo)[0];
+      let result = {target: targets[0], predict: this.update(inputs, wi, wo)[0]};
+      let e = result.target - result.predict;
       rmse += e * e;
+      results.push(result);
 
-      if (Math.abs(e) < 1/ (classes.length - 1) / 2)
+      if (Math.abs(e) < 1 / (classes.length - 1) / 2){
         acc += 1;
+      }
+        
 
       // logger('test #%d\n\toutput: %o\n\ttarget: %o', i, this.update(inputs, wi, wo)[0].toFixed(3), targets[0]);
     }
     acc /= data.length;
     rmse /= data.length;
     rmse = Math.sqrt(rmse);
-    return {acc: acc, rmse: rmse};
+    return {acc: acc, rmse: rmse, results: results};
   }
 
   train(data, iterations, learning_rate, threshold) {

@@ -160,7 +160,7 @@ function gridData(width, height, row, col, stroke, data) {
 }
 
 function plot_number(datas) {
-  let width = $('#plot-test').width();
+  let width = $('#plot-num').width();
   for(let i = 0; i < datas.length; i++){
     let data = datas[i];
     var gd = gridData(width, width, 5, 5, 1, data);

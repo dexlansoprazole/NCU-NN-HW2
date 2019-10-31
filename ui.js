@@ -10,8 +10,7 @@ ipcRenderer.on('log', function(evt, arg){
   console.log(...arg);
 });
 
-let fileString = fs.readFileSync(dataset_path, "UTF-8");
-ipcRenderer.send('input', fileString);
+readFile(dataset_path, 'perceptron1.txt');
 ipcRenderer.on('input_res', function(evt, arg){
   data = arg;
   console.log(data);
@@ -36,19 +35,17 @@ $('#btnStart').click(function () {
     ipcRenderer.send('start', [data, iter, lr, th, nh]);
 });
 
+$('#btnTest').click(function () {
+  if(isNumber){
+    ipcRenderer.send('test_num', data);
+  }
+});
+
 $('#inputFile').change(function () {
   if ($('#inputFile').prop('files')[0]) {
     let inputFile = $('#inputFile').prop('files')[0];
-    $('#inputFile-label').html(inputFile.name);
-    dataset_path = inputFile.path;
     $('#inputFile').val('');
-    let fileString = fs.readFileSync(dataset_path, "UTF-8");
-    ipcRenderer.send('input', fileString);
-
-    if(inputFile.name == 'Number.txt')
-      isNumber = true;
-    else
-      isNumber = false;
+    readFile(inputFile.path, inputFile.name);
   }
 });
 
@@ -57,25 +54,30 @@ fs.readdir(path_dir, function (err, items) {
   items.forEach(item => {
     $dropdown_item_dataset = $($.parseHTML('<a class="dropdown-item dropdown-item-dataset" href="#" filename="' + item + '" filepath="' + path.join(path_dir, item) + '">' + item.slice(0, -4) + '</a>'));
     $dropdown_item_dataset.click(function () {
-      $('#inputFile-label').html($(this).attr('filename'));
-      inputFile = [];
-      dataset_path = $(this).attr('filepath');
-      let fileString = fs.readFileSync(dataset_path, "UTF-8");
-      ipcRenderer.send('input', fileString);
-
-      if($(this).attr('filename') == 'Number.txt')
-        isNumber = true;
-      else
-        isNumber = false;
+      let filename = $(this).attr('filename');
+      let filepath = $(this).attr('filepath');
+      readFile(filepath, filename);
     });
     $('#dropdown-menu-dataset').append($dropdown_item_dataset);
   });
 });
 
+function readFile(filepath, filename) {
+  $('#inputFile-label').html(filename);
+  dataset_path = filepath;
+  let fileString = fs.readFileSync(dataset_path, "UTF-8");
+  if(filename == 'Number.txt')
+    isNumber = true;
+  else
+    isNumber = false;
+  $('#row-num').toggleClass('d-none', !isNumber);
+  ipcRenderer.send('input', {fileString: fileString, isNumber: isNumber});
+}
+
 function clear() {
   $("#plot-train").children().remove();
   $("#plot-test").children().remove();
-  $("#plot-num").children().remove();
+  $('.pred').html('');
   $(".acc").html('');
   $(".rmse").html('');
   $('#row-weights').children().remove();
@@ -83,6 +85,8 @@ function clear() {
 
 function updateResult(res_plots, res_results, i_frame=0) {
   clear();
+  if(!isNumber)
+    $("#plot-num").children().remove();
 
   // update plot
   if (res_plots != null)
@@ -90,31 +94,6 @@ function updateResult(res_plots, res_results, i_frame=0) {
   else{
     $('#plot-train').html('<h3>Train</h3>');
     $('#plot-test').html('<h3>Test</h3>');
-  }
-
-  if(isNumber){
-    // create carousel
-    let $carousel = $('<div id="carousel-num" class="carousel slide" data-ride="carousel"></div>');
-    let $carouselInner = $('<div class="carousel-inner"></div>');
-    let carouselItems = new Array();
-    for(let i = 0; i < data.length; i++){
-      let $carouselItem = $('<div class="carousel-item"  id="carouse-item-' + i + '"></div>');
-      if(i == 0)
-        $carouselItem.addClass('active');
-      carouselItems.push($carouselItem);
-    }
-    $carouselInner.append(carouselItems);
-
-    $carousel_control_prev = $('<a class="carousel-control-prev" href="#carousel-num" role="button" data-slide="prev"><span class="carousel-control-prev-icon"><span class="sr-only">Previous</span></span></a>');
-    $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
-    
-    $carousel.append($carouselInner);
-    $carousel.append($carousel_control_prev);
-    $carousel.append($carousel_control_next);
-    $('#plot-num').append($carousel);
-
-    // plot numbers
-    plot.plot_number(data);
   }
 
   // update ACC, RMSE and weights
@@ -155,6 +134,24 @@ function updateResult(res_plots, res_results, i_frame=0) {
   }
 }
 
+function updateNumber(arg, i_frame = $('#range').val()) {
+  $('.pred').html('');
+  let results = arg[i_frame].results;
+  let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
+  let i_active = $('#carousel-num .active').index('#carousel-num .carousel-item');
+  
+  for(let i = 0; i < classes.length; i++){
+    if(results[i_active].predict - (i / (classes.length - 1)) < 1 / (classes.length - 1) / 2){
+      predict = classes[i];
+      break;
+    }
+  }
+  
+  $pred_num = $('<div id="pred_num" class="pred text-center"></div>');
+  $pred_num.html('Target: ' + results[i_active].target + '<br>Predict: ' + predict);
+  $('#plot-num').append($pred_num);
+}
+
 function toggleLoading() {
   $("#spinner-start").toggleClass('d-none');
 }
@@ -163,11 +160,42 @@ ipcRenderer.on('finished', function(evt, arg){
   $(".custom-range").remove();
   $range = $($.parseHTML('<input class="custom-range" id="range" type="range" min="0" max="' + (arg.result.length - 1) + '" step="1" value="' + (arg.result.length - 1) + '">'));
   $range.on('input', function () {
-    updateResult(arg.plot, arg.result, $range.val());
+    updateResult(arg.plot, arg.result, $(this).val());
   });
   $('#col-range').html($range);
   $range.focus();
 
   updateResult(arg.plot, arg.result, arg.result.length - 1);
   toggleLoading();
+});
+
+ipcRenderer.on('test_num_res', function(evt, arg){
+  // TODO: support custom input
+  // create carousel
+  let $carousel = $('<div id="carousel-num" class="carousel slide" data-ride="carousel"></div>');
+  let $carouselInner = $('<div class="carousel-inner"></div>');
+  let carouselItems = new Array();
+  for(let i = 0; i < data.length; i++){
+    let $carouselItem = $('<div class="carousel-item"  id="carouse-item-' + i + '"></div>');
+    if(i == 0)
+      $carouselItem.addClass('active');
+    carouselItems.push($carouselItem);
+  }
+  $carouselInner.append(carouselItems);
+
+  $carousel_control_prev = $('<a class="carousel-control-prev" href="#carousel-num" role="button" data-slide="prev"><span class="carousel-control-prev-icon"><span class="sr-only">Previous</span></span></a>');
+  $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
+  
+  $carousel.append($carouselInner);
+  $carousel.append($carousel_control_prev);
+  $carousel.append($carousel_control_next);
+  $carousel.bind('slid.bs.carousel', function (evt) {
+    updateNumber(arg);
+  });
+  $('#plot-num').html($carousel);
+  $('#range').on('input', function(){
+    updateNumber(arg);
+  })
+  plot.plot_number(data);
+  updateNumber(arg, arg.length - 1);
 });

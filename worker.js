@@ -3,7 +3,11 @@ const MLP = require('./modules/mlp');
 const logger = require('./modules/logger');
 
 var dataset = null;
-function loadData(rawText) {
+var net = null;
+var isNumber = false;
+function loadData(arg) {
+  isNumber = arg.isNumber;
+  let rawText = arg.fileString;
   let data = new Array();
   var lines = rawText.split("\n");
   for (let i = 0; i < lines.length; i++) {
@@ -53,7 +57,7 @@ function splitData(data) {
   return {train: train, test: test};
 }
 
-function main(evt, data, iter, lr, th, nh) {
+function main(data, iter, lr, th, nh) {
   let draw = null;
   let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
   logger('class_ori: %o', classes);
@@ -72,7 +76,7 @@ function main(evt, data, iter, lr, th, nh) {
   logger('dataset: %o', dataset);
   let output_size = 1;
   let input_size = dataset.train[0].length - output_size;
-  let net = new MLP(input_size, nh, output_size);
+  net = new MLP(input_size, nh, output_size);
   // ui.toggleLoading();
   net.train(dataset.train, iter, lr, th);
   let w = net.ws[net.ws.length - 1];
@@ -83,17 +87,16 @@ function main(evt, data, iter, lr, th, nh) {
   if (net.ni == 3 && net.nh == 3){
     res_plots = new Array();
     for(let i = 0; i <　net.ws.length; i++){
-      res_plots.push(mlp_res_plot(net, i));
+      res_plots.push(mlp_res_plot(i));
     }
   }
   for(let i = 0; i <　net.ws.length; i++){
-    res_results.push({w: net.ws[i], res_test: mlp_res_result(net, i)});
+      res_results.push({w: net.ws[i], res_test: {trainSet: mlp_res_result(dataset.train, i), testSet: mlp_res_result(dataset.test, i)}});
   }
-
-  evt.sender.send('finished', {plot: res_plots, result: res_results});
+  return {plot: res_plots, result: res_results};
 }
 
-function mlp_res_plot(net, i_frame) {
+function mlp_res_plot(i_frame) {
   let w = net.ws[i_frame];
   let wi = w.wi;
   let wo = w.wo;
@@ -143,13 +146,12 @@ function mlp_res_plot(net, i_frame) {
   return [dataset, fn, fn_final, y_trans];
 }
 
-function mlp_res_result(net, i_frame){
+function mlp_res_result(data = dataset.test, i_frame){
   let w = net.ws[i_frame];
   let wi = w.wi;
   let wo = w.wo;
-  res_test_trainSet = net.test(dataset.train, wi, wo);
-  res_test_testSet = net.test(dataset.test, wi, wo);
-  return {trainSet: res_test_trainSet, testSet: res_test_testSet};
+  res_test = net.test(data, wi, wo);
+  return res_test;
 }
 
 ipcRenderer.on('input', function(evt, arg) {
@@ -157,5 +159,13 @@ ipcRenderer.on('input', function(evt, arg) {
 });
 
 ipcRenderer.on('start', function(evt, arg) {
-  main(evt, ...arg);
+  evt.sender.send('finished', main(...arg));
+});
+
+ipcRenderer.on('test_num', function(evt, arg) {
+  let res_num = new Array();
+  for(let i = 0; i <　net.ws.length; i++){
+    res_num.push(mlp_res_result(arg, i));
+  }
+  evt.sender.send('test_num_res', res_num);
 });

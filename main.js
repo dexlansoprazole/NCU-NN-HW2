@@ -19,6 +19,7 @@ function createWindow() {
     webPreferences: { nodeIntegration: true }
   });
   workerWindow.loadFile('worker.html');
+  // workerWindow.webContents.openDevTools()
   
   mainWindow.on('closed', function () {
     mainWindow = null;
@@ -46,6 +47,12 @@ app.on('ready', function() {
   })
   ipcMain.on('finished', (evt, arg) => {
     mainWindow.webContents.send('finished', arg);
+  })
+  ipcMain.on('test_num', (evt, arg) => {
+    workerWindow.webContents.send('test_num', arg);
+  })
+  ipcMain.on('test_num_res', (evt, arg) => {
+    mainWindow.webContents.send('test_num_res', arg);
   })
   
   createWindow();
