@@ -31,13 +31,21 @@ $('#btnStart').click(function () {
   let lr = parseFloat($('#in_lr').val());
   let th = parseFloat($('#in_th').val());
   let nh = parseInt($('#in_nh').val());
-  if(data != null)
+  if(data == null)
+    console.log('Invalid dataset');
+  else
     ipcRenderer.send('start', [data, iter, lr, th, nh]);
 });
 
 $('#btnTest').click(function () {
+  //TODO: support file input
   if(isNumber){
-    ipcRenderer.send('test_num', data);
+    let data_num = $('#in_num').val().split("");
+    data_num = [data_num.map(v => parseInt(v))];
+    if(data_num[0].length == data[0].length)
+      ipcRenderer.send('test_num', data_num);
+    else
+      console.log('Invalid input');
   }
 });
 
@@ -170,32 +178,33 @@ ipcRenderer.on('finished', function(evt, arg){
 });
 
 ipcRenderer.on('test_num_res', function(evt, arg){
-  // TODO: support custom input
   // create carousel
   let $carousel = $('<div id="carousel-num" class="carousel slide" data-ride="carousel"></div>');
   let $carouselInner = $('<div class="carousel-inner"></div>');
   let carouselItems = new Array();
-  for(let i = 0; i < data.length; i++){
+  for(let i = 0; i < arg.data.length; i++){
     let $carouselItem = $('<div class="carousel-item"  id="carouse-item-' + i + '"></div>');
     if(i == 0)
       $carouselItem.addClass('active');
     carouselItems.push($carouselItem);
   }
   $carouselInner.append(carouselItems);
-
-  $carousel_control_prev = $('<a class="carousel-control-prev" href="#carousel-num" role="button" data-slide="prev"><span class="carousel-control-prev-icon"><span class="sr-only">Previous</span></span></a>');
-  $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
-  
   $carousel.append($carouselInner);
-  $carousel.append($carousel_control_prev);
-  $carousel.append($carousel_control_next);
-  $carousel.bind('slid.bs.carousel', function (evt) {
-    updateNumber(arg);
-  });
+
+  if(arg.data.length > 1){
+    $carousel_control_prev = $('<a class="carousel-control-prev" href="#carousel-num" role="button" data-slide="prev"><span class="carousel-control-prev-icon"><span class="sr-only">Previous</span></span></a>');
+    $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
+    $carousel.append($carousel_control_prev);
+    $carousel.append($carousel_control_next);
+    $carousel.bind('slid.bs.carousel', function (evt) {
+      updateNumber(arg.res_num);
+    });
+  }
+
   $('#plot-num').html($carousel);
   $('#range').on('input', function(){
-    updateNumber(arg);
+    updateNumber(arg.res_num);
   })
-  plot.plot_number(data);
-  updateNumber(arg, arg.length - 1);
+  plot.plot_number(arg.data);
+  updateNumber(arg.res_num, arg.res_num.length - 1);
 });

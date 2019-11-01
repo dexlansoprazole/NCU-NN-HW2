@@ -163,7 +163,8 @@ function plot_number(datas) {
   let width = $('#plot-num').width();
   for(let i = 0; i < datas.length; i++){
     let data = datas[i];
-    var gd = gridData(width, width, 5, 5, 1, data);
+    let edge = Math.floor(Math.sqrt(data.length - 1));
+    var gd = gridData(width, width, edge, edge, 1, data);
     var grid = d3.select('#carouse-item-' + i)
       .append("svg")
       .attr("class", "d-block w-100")

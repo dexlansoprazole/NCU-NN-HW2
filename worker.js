@@ -167,5 +167,5 @@ ipcRenderer.on('test_num', function(evt, arg) {
   for(let i = 0; i <　net.ws.length; i++){
     res_num.push(mlp_res_result(arg, i));
   }
-  evt.sender.send('test_num_res', res_num);
+  evt.sender.send('test_num_res', {data: arg, res_num: res_num});
 });
