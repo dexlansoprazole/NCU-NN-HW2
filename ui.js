@@ -24,6 +24,13 @@ document.addEventListener("keydown", function(e) {
   }
 });
 
+$('#alert').on('closed.bs.alert', () => {
+  $(this).removeClass();
+  $(this).addClass('alert');
+  $(this).addClass('alert-dismissible');
+  $(this).addClass('fade');
+})
+
 $('#btnStart').click(function () {
   clear();
   toggleLoading();
@@ -35,6 +42,7 @@ $('#btnStart').click(function () {
     console.log('Invalid dataset');
   else
     ipcRenderer.send('start', [data, iter, lr, th, nh]);
+  showAlert('danger', 'Test', data.length);
 });
 
 $('#btnTest').click(function () {
@@ -162,6 +170,21 @@ function updateNumber(arg, i_frame = $('#range').val()) {
 
 function toggleLoading() {
   $("#spinner-start").toggleClass('d-none');
+}
+
+function showModal(title ,msg) {
+  $modal = $('#modal-dialog');
+  $modal.find('.modal-title').html(title);
+  $modal.find('.modal-body').html(msg);
+  $modal.modal('show');
+}
+
+function showAlert(level, title, msg) {
+  //TODO: add alert
+  $alert = $('#alert');
+  $alert.prepend('<strong>' + title + ':</strong> ' + msg);
+  $alert.addClass('alert-' + level);
+  $alert.addClass('show');
 }
 
 ipcRenderer.on('finished', function(evt, arg){

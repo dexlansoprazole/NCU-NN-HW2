@@ -11,6 +11,11 @@
 </head>
 
 <body>
+  <div class="alert alert-dismissible fade" id="alert" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
   <div class="container">
     <div class="page-header">
       <h1>NN HW2: MLP</h1>
@@ -136,6 +141,7 @@
 
     <div class="row" id="row-weights"></div>
 
+    <!-- loading modal -->
     <div class="modal fade" id="modal-loading">
         <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
@@ -147,6 +153,24 @@
             </div>
           </div>
         </div>
+    </div>
+
+    <!-- dialog modal -->
+    <div class="modal fade" id="modal-dialog" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modal-dialog-title"></h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Confirm</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
