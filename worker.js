@@ -158,6 +158,10 @@ ipcRenderer.on('input', function(evt, arg) {
   evt.sender.send('input_res', loadData(arg));
 });
 
+ipcRenderer.on('input_num', function(evt, arg) {
+  evt.sender.send('input_num_res', loadData(arg));
+});
+
 ipcRenderer.on('start', function(evt, arg) {
   evt.sender.send('finished', main(...arg));
 });

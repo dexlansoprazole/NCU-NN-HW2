@@ -42,6 +42,12 @@ app.on('ready', function() {
   ipcMain.on('input_res', (evt, arg) => {
     mainWindow.webContents.send('input_res', arg);
   })
+  ipcMain.on('input_num', (evt, arg) => {
+    workerWindow.webContents.send('input_num', arg);
+  })
+  ipcMain.on('input_num_res', (evt, arg) => {
+    mainWindow.webContents.send('input_num_res', arg);
+  })
   ipcMain.on('start', (evt, arg) => {
     workerWindow.webContents.send('start', arg);
   })

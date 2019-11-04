@@ -11,11 +11,7 @@
 </head>
 
 <body>
-  <div class="alert alert-dismissible fade" id="alert" role="alert">
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
+  <div id="alert"></div>
   <div class="container">
     <div class="page-header">
       <h1>NN HW2: MLP</h1>
@@ -25,13 +21,12 @@
       <div class="col">
         <div class="input-group">
           <div class="input-group-prepend">
-            <div class="dropdown">
+              <span class="input-group-text">Input</span>
               <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Dataset
               </button>
               <div id="dropdown-menu-dataset" class="dropdown-menu">
               </div>
-            </div>
           </div>
           <div class="custom-file">
             <input type="file" class="custom-file-input" id="inputFile">
@@ -87,12 +82,19 @@
         <div class="input-group">
           <div class="input-group-prepend">
             <span class="input-group-text">Test Input</span>
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-num" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Text
+            </button>
+            <div id="dropdown-menu-num" class="dropdown-menu">
+              <a class="dropdown-item dropdown-item-num" href="#">Text</a>
+              <a class="dropdown-item dropdown-item-num" href="#">File</a>
+            </div>
           </div>
-          <input id="in_num" type="text" class="form-control" value="11111100011000110001111110">
+          <input id="in_num_text" type="text" class="form-control in_num" value="11111100011000110001111110">
         </div>
       </div>
       <div class="col-2">
-        <button id="btnTest" class="btn btn-warning btn-block" type="button">Test</button>
+        <button id="btnTest" class="btn btn-warning btn-block disabled" type="button">Test</button>
       </div>
     </div>
 
@@ -153,24 +155,6 @@
             </div>
           </div>
         </div>
-    </div>
-
-    <!-- dialog modal -->
-    <div class="modal fade" id="modal-dialog" tabindex="-1" role="dialog">
-      <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modal-dialog-title"></h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body"></div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" data-dismiss="modal">Confirm</button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 

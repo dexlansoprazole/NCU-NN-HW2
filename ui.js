@@ -5,6 +5,7 @@ const plot = require('./modules/plot');
 var isNumber = false;
 var dataset_path = './dataset/perceptron1.txt';
 var data = null;
+var data_num = null;
 
 ipcRenderer.on('log', function(evt, arg){
   console.log(...arg);
@@ -16,6 +17,12 @@ ipcRenderer.on('input_res', function(evt, arg){
   console.log(data);
 });
 
+ipcRenderer.on('input_num_res', function(evt, arg){
+  data_num = arg;
+  console.log(data_num);
+  $('#btnTest').removeClass('disabled');
+});
+
 document.addEventListener("keydown", function(e) {
   if (e.which === 123) {
     require('electron').remote.getCurrentWindow().toggleDevTools();
@@ -24,43 +31,65 @@ document.addEventListener("keydown", function(e) {
   }
 });
 
-$('#alert').on('closed.bs.alert', () => {
-  $(this).removeClass();
-  $(this).addClass('alert');
-  $(this).addClass('alert-dismissible');
-  $(this).addClass('fade');
-})
-
 $('#btnStart').click(function () {
   clear();
+  $("#col-range").children().remove();
   toggleLoading();
   let iter = parseInt($('#in_iter').val());
   let lr = parseFloat($('#in_lr').val());
   let th = parseFloat($('#in_th').val());
   let nh = parseInt($('#in_nh').val());
   if(data == null)
-    console.log('Invalid dataset');
+    showAlert('danger', 'Error', 'Invalid dataset');
   else
     ipcRenderer.send('start', [data, iter, lr, th, nh]);
-  showAlert('danger', 'Test', data.length);
+});
+
+$('.dropdown-item-num').click(function() {
+  let $in_num_text = $('<input id="in_num_text" type="text" class="form-control in_num" value="11111100011000110001111110">');
+  let $in_num_file = $('<div class="custom-file in_num"><input type="file" class="custom-file-input in_num" id="in_num_file"><label class="custom-file-label">Choose file</label></div>');
+  $in_num_file.children('input').change(function(){
+    if ($(this).prop('files')[0]) {
+      let inputFile = $(this).prop('files')[0];
+      let fileString = fs.readFileSync(inputFile.path, "UTF-8");
+      $in_num_file.find('.custom-file-label').html(inputFile.name);
+      ipcRenderer.send('input_num', {fileString: fileString, isNumber: isNumber});
+    }
+  });
+  $('#row-num').find('.in_num').remove();
+  let type = $(this).html();
+  $('#dropdownMenuButton-num').html(type);
+  if(type == 'Text')
+    $('#row-num').find('.input-group').append($in_num_text);
+  else if(type == 'File')
+    $('#row-num').find('.input-group').append($in_num_file);
+  data_num = null;
 });
 
 $('#btnTest').click(function () {
-  //TODO: support file input
-  if(isNumber){
-    let data_num = $('#in_num').val().split("");
-    data_num = [data_num.map(v => parseInt(v))];
-    if(data_num[0].length == data[0].length)
-      ipcRenderer.send('test_num', data_num);
+  if(isNumber && !$(this).hasClass('disabled')){
+    let $in_num = $("input[class*=in_num]");
+    if($in_num.attr('type') == 'text'){
+      data_num = $in_num.val().split("");
+      data_num = [data_num.map(v => parseInt(v))];
+    }
+    
+    if(data_num != null){
+      console.log(data_num);
+      if(data_num[0].length == data[0].length)
+        ipcRenderer.send('test_num', data_num);
+      else
+        showAlert('danger', 'Error', 'Invalid input');
+    }
     else
-      console.log('Invalid input');
+      showAlert('danger', 'Error', 'Invalid input');
   }
 });
 
 $('#inputFile').change(function () {
-  if ($('#inputFile').prop('files')[0]) {
-    let inputFile = $('#inputFile').prop('files')[0];
-    $('#inputFile').val('');
+  if ($(this).prop('files')[0]) {
+    let inputFile = $(this).prop('files')[0];
+    $(this).val('');
     readFile(inputFile.path, inputFile.name);
   }
 });
@@ -87,6 +116,7 @@ function readFile(filepath, filename) {
   else
     isNumber = false;
   $('#row-num').toggleClass('d-none', !isNumber);
+  $('#btnTest').addClass('disabled');
   ipcRenderer.send('input', {fileString: fileString, isNumber: isNumber});
 }
 
@@ -164,7 +194,7 @@ function updateNumber(arg, i_frame = $('#range').val()) {
   }
   
   $pred_num = $('<div id="pred_num" class="pred text-center"></div>');
-  $pred_num.html('Target: ' + results[i_active].target + '<br>Predict: ' + predict);
+  $pred_num.html('#' + i_active + '&nbsp;&nbsp;&nbsp;&nbsp;Target: ' + results[i_active].target + '&nbsp;&nbsp;&nbsp;&nbsp;Predict: ' + predict);
   $('#plot-num').append($pred_num);
 }
 
@@ -172,32 +202,31 @@ function toggleLoading() {
   $("#spinner-start").toggleClass('d-none');
 }
 
-function showModal(title ,msg) {
-  $modal = $('#modal-dialog');
-  $modal.find('.modal-title').html(title);
-  $modal.find('.modal-body').html(msg);
-  $modal.modal('show');
-}
-
 function showAlert(level, title, msg) {
-  //TODO: add alert
-  $alert = $('#alert');
-  $alert.prepend('<strong>' + title + ':</strong> ' + msg);
-  $alert.addClass('alert-' + level);
-  $alert.addClass('show');
+  $alert = $('<div class="alert alert-' + level + '" role="alert"></div>');
+  $btnClose = $('<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>');
+  $alert.append('<span><strong>' + title + ':</strong> ' + msg + '</span>');
+  $alert.append($btnClose);
+  $alert.hide();
+  $alert.click(function() {
+    $(this).alert('close');
+  });
+  $('#alert').prepend($alert);
+  $alert.fadeTo('normal', 1).delay(3000).fadeTo('normal', 0, function() {
+    $(this).alert('close');
+  });
 }
 
 ipcRenderer.on('finished', function(evt, arg){
-  $(".custom-range").remove();
   $range = $($.parseHTML('<input class="custom-range" id="range" type="range" min="0" max="' + (arg.result.length - 1) + '" step="1" value="' + (arg.result.length - 1) + '">'));
   $range.on('input', function () {
     updateResult(arg.plot, arg.result, $(this).val());
   });
   $('#col-range').html($range);
-  $range.focus();
 
   updateResult(arg.plot, arg.result, arg.result.length - 1);
   toggleLoading();
+  $('#btnTest').removeClass('disabled');
 });
 
 ipcRenderer.on('test_num_res', function(evt, arg){
@@ -223,7 +252,9 @@ ipcRenderer.on('test_num_res', function(evt, arg){
       updateNumber(arg.res_num);
     });
   }
-
+  $carousel.carousel({
+    interval: false
+  });
   $('#plot-num').html($carousel);
   $('#range').on('input', function(){
     updateNumber(arg.res_num);
