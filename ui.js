@@ -186,16 +186,18 @@ function updateNumber(arg, i_frame = $('#range').val()) {
   let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
   let i_active = $('#carousel-num .active').index('#carousel-num .carousel-item');
   
-  for(let i = 0; i < classes.length; i++){
-    if(results[i_active].predict - (i / (classes.length - 1)) < 1 / (classes.length - 1) / 2){
-      predict = classes[i];
-      break;
+  if(i_active >= 0){
+    for(let i = 0; i < classes.length; i++){
+      if(results[i_active].predict - (i / (classes.length - 1)) < 1 / (classes.length - 1) / 2){
+        predict = classes[i];
+        break;
+      }
     }
+    
+    $pred_num = $('<div id="pred_num" class="pred text-center"></div>');
+    $pred_num.html('#' + i_active + '&nbsp;&nbsp;&nbsp;&nbsp;Target: ' + results[i_active].target + '&nbsp;&nbsp;&nbsp;&nbsp;Predict: ' + predict);
+    $('#plot-num').append($pred_num);
   }
-  
-  $pred_num = $('<div id="pred_num" class="pred text-center"></div>');
-  $pred_num.html('#' + i_active + '&nbsp;&nbsp;&nbsp;&nbsp;Target: ' + results[i_active].target + '&nbsp;&nbsp;&nbsp;&nbsp;Predict: ' + predict);
-  $('#plot-num').append($pred_num);
 }
 
 function toggleLoading() {
@@ -229,6 +231,10 @@ ipcRenderer.on('finished', function(evt, arg){
   $('#btnTest').removeClass('disabled');
 });
 
+function updateNumberHandler(evt) {
+  updateNumber(evt.data.res_num);
+}
+
 ipcRenderer.on('test_num_res', function(evt, arg){
   // create carousel
   let $carousel = $('<div id="carousel-num" class="carousel slide" data-ride="carousel"></div>');
@@ -248,17 +254,15 @@ ipcRenderer.on('test_num_res', function(evt, arg){
     $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
     $carousel.append($carousel_control_prev);
     $carousel.append($carousel_control_next);
-    $carousel.bind('slid.bs.carousel', function (evt) {
-      updateNumber(arg.res_num);
-    });
+    $carousel.unbind('slid.bs.carousel', updateNumberHandler);
+    $carousel.bind('slid.bs.carousel', {res_num: arg.res_num}, updateNumberHandler);
   }
   $carousel.carousel({
     interval: false
   });
   $('#plot-num').html($carousel);
-  $('#range').on('input', function(){
-    updateNumber(arg.res_num);
-  })
+  $('#range').unbind('input', updateNumberHandler);
+  $('#range').bind('input', {res_num: arg.res_num}, updateNumberHandler);
   plot.plot_number(arg.data);
   updateNumber(arg.res_num, arg.res_num.length - 1);
 });
