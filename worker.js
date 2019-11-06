@@ -3,6 +3,7 @@ const MLP = require('./modules/mlp');
 const logger = require('./modules/logger');
 
 var dataset = null;
+var dataset_ori = null;
 var net = null;
 var isNumber = false;
 function loadData(arg) {
@@ -51,16 +52,17 @@ function splitData(data) {
     }
   }
   else {
-    train = data.slice();
-    test = data.slice();
+    train = data.map(function(arr) {return arr.slice();});
+    test = data.map(function(arr) {return arr.slice();});
   }
   return {train: train, test: test};
 }
 
 function main(data, iter, lr, th, nh) {
-  let draw = null;
   let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
   logger('class_ori: %o', classes);
+  dataset_ori = splitData(data.map(function(arr) {return arr.slice();}));
+
   // Normalization
   for (let i = 0; i < data.length; i++) {
     for(let j = 0; j < classes.length; j++){
@@ -146,11 +148,11 @@ function mlp_res_plot(i_frame) {
   return [dataset, fn, fn_final, y_trans];
 }
 
-function mlp_res_result(data = dataset.test, i_frame){
+function mlp_res_result(data = dataset.test, i_frame, data_ori=dataset_ori.test){
   let w = net.ws[i_frame];
   let wi = w.wi;
   let wo = w.wo;
-  res_test = net.test(data, wi, wo);
+  res_test = net.test(data, wi, wo, data_ori);
   return res_test;
 }
 
@@ -169,7 +171,7 @@ ipcRenderer.on('start', function(evt, arg) {
 ipcRenderer.on('test_num', function(evt, arg) {
   let res_num = new Array();
   for(let i = 0; i <　net.ws.length; i++){
-    res_num.push(mlp_res_result(arg, i));
+    res_num.push({trainSet: mlp_res_result(dataset.train, i, dataset_ori.train), testSet: mlp_res_result(arg, i, arg)});
   }
-  evt.sender.send('test_num_res', {data: arg, res_num: res_num});
+  evt.sender.send('test_num_res', {dataset: {train: dataset_ori.train, test: arg}, res_num: res_num});
 });

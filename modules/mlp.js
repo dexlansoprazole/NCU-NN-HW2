@@ -121,7 +121,7 @@ class MLP {
     return error;
   }
 
-  test(data, wi, wo) {
+  test(data, wi, wo, data_ori=data) {
     let acc = 0.0;
     let rmse = 0.0;
     let results = new Array();
@@ -129,7 +129,8 @@ class MLP {
     for(let i = 0; i < data.length; i++){
       let inputs = data[i].slice(0, -1);
       let targets = data[i].slice(-1);
-      let result = {target: targets[0], predict: this.update(inputs, wi, wo)[0]};
+      let targets_ori = data_ori[i].slice(-1);
+      let result = {target: targets[0], target_ori: targets_ori[0], predict: this.update(inputs, wi, wo)[0]};
       let e = result.target - result.predict;
       rmse += e * e;
       results.push(result);

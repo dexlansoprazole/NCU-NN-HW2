@@ -17,7 +17,7 @@ function plot2d_mlp(dataset, fn, fn_final, y_trans) {
 
 function plot2d_mlp_train(dataset, fn, fn_final, y_trans) {
   let width = $('#plot-train').width();
-  let classes = [...new Set(dataset.train.concat(dataset.test).map(function (v) { return v[v.length - 1] }))];
+  let classes = [...new Set(dataset.train.map(function (v) { return v[v.length - 1] }))];
   let options_train = {
     title: 'Train',
     target: '#plot-train',
@@ -74,7 +74,7 @@ function plot2d_mlp_train(dataset, fn, fn_final, y_trans) {
 
 function plot2d_mlp_test(dataset, fn, fn_final, y_trans) {
   let width = $('#plot-test').width();
-  let classes = [...new Set(dataset.train.concat(dataset.test).map(function (v) { return v[v.length - 1] }))];
+  let classes = [...new Set(dataset.train.map(function (v) { return v[v.length - 1] }))];
   let options_test = {
     title: 'Test',
     target: '#plot-test',
@@ -160,21 +160,46 @@ function gridData(width, height, row, col, stroke, data) {
 }
 
 function plot_number(datas) {
-  let width = $('#plot-num').width();
-  for(let i = 0; i < datas.length; i++){
-    let data = datas[i];
+  let width = $('#plot-train-num').width();
+  for(let i = 0; i < datas.train.length; i++){
+    let data = datas.train[i];
     let edge = Math.floor(Math.sqrt(data.length - 1));
-    var gd = gridData(width, width, edge, edge, 1, data);
-    var grid = d3.select('#carouse-item-' + i)
+    let gd = gridData(width, width, edge, edge, 1, data);
+    let grid = d3.select('#carouse-item-train-num' + i)
       .append("svg")
       .attr("class", "d-block w-100")
       .attr("width", width)
       .attr("height", width);
-    var row = grid.selectAll(".row")
+    let row = grid.selectAll(".row")
       .data(gd)
       .enter().append("g")
       .attr("class", "row");
-    var column = row.selectAll(".square")
+    let column = row.selectAll(".square")
+      .data(function(d) { return d; })
+      .enter().append("rect")
+      .attr("class","square")
+      .attr("x", function(d) { return d.x; })
+      .attr("y", function(d) { return d.y; })
+      .attr("width", function(d) { return d.width; })
+      .attr("height", function(d) { return d.height; })
+      .style("fill", function(d) { return d.enable?"#000":"#fff"; })
+      .style("stroke", "#ccc");
+  }
+  width = $('#plot-test-num').width();
+  for(let i = 0; i < datas.test.length; i++){
+    let data = datas.test[i];
+    let edge = Math.floor(Math.sqrt(data.length - 1));
+    let gd = gridData(width, width, edge, edge, 1, data);
+    let grid = d3.select('#carouse-item-test-num' + i)
+      .append("svg")
+      .attr("class", "d-block w-100")
+      .attr("width", width)
+      .attr("height", width);
+    let row = grid.selectAll(".row")
+      .data(gd)
+      .enter().append("g")
+      .attr("class", "row");
+    let column = row.selectAll(".square")
       .data(function(d) { return d; })
       .enter().append("rect")
       .attr("class","square")

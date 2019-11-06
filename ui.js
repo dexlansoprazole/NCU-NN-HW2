@@ -180,23 +180,28 @@ function updateResult(res_plots, res_results, i_frame=0) {
   }
 }
 
-function updateNumber(arg, i_frame = $('#range').val()) {
+function updateNumber(dataset, res_num, i_frame = $('#range').val()) {
   $('.pred').html('');
-  let results = arg[i_frame].results;
-  let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
-  let i_active = $('#carousel-num .active').index('#carousel-num .carousel-item');
+  let results = {train: res_num[i_frame].trainSet.results, test: res_num[i_frame].testSet.results};
+  let classes = [...new Set(dataset.train.map(function (v) { return v[v.length - 1] }))];
+  let i_active = {train: $('#carousel-train-num .active').index('#carousel-train-num .carousel-item'), test: $('#carousel-test-num .active').index('#carousel-test-num .carousel-item')};
+  let predict = {train: null, test: null};
   
-  if(i_active >= 0){
+  if(i_active.train >= 0 && i_active.test >= 0){
     for(let i = 0; i < classes.length; i++){
-      if(results[i_active].predict - (i / (classes.length - 1)) < 1 / (classes.length - 1) / 2){
-        predict = classes[i];
-        break;
-      }
+      if(results.train[i_active.train].predict - (i / (classes.length - 1)) < 1 / (classes.length - 1) / 2 && predict.train == null)
+        predict.train = classes[i];
+      if(results.test[i_active.test].predict - (i / (classes.length - 1)) < 1 / (classes.length - 1) / 2 && predict.test == null)
+        predict.test = classes[i];
     }
     
-    $pred_num = $('<div id="pred_num" class="pred text-center"></div>');
-    $pred_num.html('#' + i_active + '&nbsp;&nbsp;&nbsp;&nbsp;Target: ' + results[i_active].target + '&nbsp;&nbsp;&nbsp;&nbsp;Predict: ' + predict);
-    $('#plot-num').append($pred_num);
+    let $pred_train_num = $('<div id="pred-train-num" class="pred text-center"></div>');
+    $pred_train_num.html('#' + i_active.train + '&nbsp;&nbsp;&nbsp;&nbsp;Target: ' + results.train[i_active.train].target_ori + '&nbsp;&nbsp;&nbsp;&nbsp;Predict: ' + predict.train);
+    $('#plot-train-num').append($pred_train_num);
+
+    let $pred_test_num = $('<div id="pred-test-num" class="pred text-center"></div>');
+    $pred_test_num.html('#' + i_active.test + '&nbsp;&nbsp;&nbsp;&nbsp;Target: ' + results.test[i_active.test].target_ori + '&nbsp;&nbsp;&nbsp;&nbsp;Predict: ' + predict.test);
+    $('#plot-test-num').append($pred_test_num);
   }
 }
 
@@ -232,37 +237,65 @@ ipcRenderer.on('finished', function(evt, arg){
 });
 
 function updateNumberHandler(evt) {
-  updateNumber(evt.data.res_num);
+  updateNumber(evt.data.dataset, evt.data.res_num);
 }
 
 ipcRenderer.on('test_num_res', function(evt, arg){
   // create carousel
-  let $carousel = $('<div id="carousel-num" class="carousel slide" data-ride="carousel"></div>');
-  let $carouselInner = $('<div class="carousel-inner"></div>');
-  let carouselItems = new Array();
-  for(let i = 0; i < arg.data.length; i++){
-    let $carouselItem = $('<div class="carousel-item"  id="carouse-item-' + i + '"></div>');
+  let $carousel = {
+    train: $('<div id="carousel-train-num" class="carousel slide" data-ride="carousel"></div>'),
+    test: $('<div id="carousel-test-num" class="carousel slide" data-ride="carousel"></div>')
+  };
+  let $carouselInner = {
+    train: $('<div class="carousel-inner"></div>'),
+    test: $('<div class="carousel-inner"></div>')
+  };
+  let carouselItems = {train: new Array(), test: new Array()};
+  for(let i = 0; i < arg.dataset.train.length; i++){
+    let $carouselItem = $('<div class="carousel-item"  id="carouse-item-train-num' + i + '"></div>');
     if(i == 0)
       $carouselItem.addClass('active');
-    carouselItems.push($carouselItem);
+    carouselItems.train.push($carouselItem);
   }
-  $carouselInner.append(carouselItems);
-  $carousel.append($carouselInner);
+  for(let i = 0; i < arg.dataset.test.length; i++){
+    let $carouselItem = $('<div class="carousel-item"  id="carouse-item-test-num' + i + '"></div>');
+    if(i == 0)
+      $carouselItem.addClass('active');
+    carouselItems.test.push($carouselItem);
+  }
+  $carouselInner.train.append(carouselItems.train);
+  $carouselInner.test.append(carouselItems.test);
+  $carousel.train.append($carouselInner.train);
+  $carousel.test.append($carouselInner.test);
 
-  if(arg.data.length > 1){
-    $carousel_control_prev = $('<a class="carousel-control-prev" href="#carousel-num" role="button" data-slide="prev"><span class="carousel-control-prev-icon"><span class="sr-only">Previous</span></span></a>');
-    $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
-    $carousel.append($carousel_control_prev);
-    $carousel.append($carousel_control_next);
-    $carousel.unbind('slid.bs.carousel', updateNumberHandler);
-    $carousel.bind('slid.bs.carousel', {res_num: arg.res_num}, updateNumberHandler);
+  if(arg.dataset.train.length > 1){
+    let $carousel_control_prev = $('<a class="carousel-control-prev" href="#carousel-train-num" role="button" data-slide="prev"><span class="carousel-control-prev-icon"><span class="sr-only">Previous</span></span></a>');
+    let $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-train-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
+    $carousel.train.append($carousel_control_prev);
+    $carousel.train.append($carousel_control_next);
+    $carousel.train.unbind('slid.bs.carousel', updateNumberHandler);
+    $carousel.train.bind('slid.bs.carousel', {dataset: arg.dataset, res_num: arg.res_num}, updateNumberHandler);
   }
-  $carousel.carousel({
+  if(arg.dataset.test.length > 1){
+    let $carousel_control_prev = $('<a class="carousel-control-prev" href="#carousel-test-num" role="button" data-slide="prev"><span class="carousel-control-prev-icon"><span class="sr-only">Previous</span></span></a>');
+    let $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-test-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
+    $carousel.test.append($carousel_control_prev);
+    $carousel.test.append($carousel_control_next);
+    $carousel.test.unbind('slid.bs.carousel', updateNumberHandler);
+    $carousel.test.bind('slid.bs.carousel', {dataset: arg.dataset, res_num: arg.res_num}, updateNumberHandler);
+  }
+
+  $carousel.train.carousel({
     interval: false
   });
-  $('#plot-num').html($carousel);
+  $carousel.test.carousel({
+    interval: false
+  });
+
+  $('#plot-train-num').html($carousel.train);
+  $('#plot-test-num').html($carousel.test);
   $('#range').unbind('input', updateNumberHandler);
-  $('#range').bind('input', {res_num: arg.res_num}, updateNumberHandler);
-  plot.plot_number(arg.data);
-  updateNumber(arg.res_num, arg.res_num.length - 1);
+  $('#range').bind('input', {dataset: arg.dataset, res_num: arg.res_num}, updateNumberHandler);
+  plot.plot_number(arg.dataset);
+  updateNumber(arg.dataset, arg.res_num, arg.res_num.length - 1);
 });
