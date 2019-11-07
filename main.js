@@ -12,7 +12,7 @@ function createWindow() {
     webPreferences: { nodeIntegration: true }
   })
   mainWindow.loadFile('ui.html')
-  mainWindow.webContents.openDevTools()
+  // mainWindow.webContents.openDevTools()
 
   workerWindow = new BrowserWindow({
     show: false,
