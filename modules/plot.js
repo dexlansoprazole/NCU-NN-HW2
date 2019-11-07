@@ -160,6 +160,11 @@ function gridData(width, height, row, col, stroke, data) {
 }
 
 function plot_number(datas) {
+  plot_number_train(datas);
+  plot_number_test(datas);
+}
+
+function plot_number_train(datas) {
   let width = $('#plot-train-num').width();
   for(let i = 0; i < datas.train.length; i++){
     let data = datas.train[i];
@@ -185,8 +190,11 @@ function plot_number(datas) {
       .style("fill", function(d) { return d.enable?"#000":"#fff"; })
       .style("stroke", "#ccc");
   }
-  width = $('#plot-test-num').width();
-  for(let i = 0; i < datas.test.length; i++){
+}
+
+function plot_number_test(datas) {
+  let width = $('#plot-test-num').width();
+  for (let i = 0; i < datas.test.length; i++) {
     let data = datas.test[i];
     let edge = Math.floor(Math.sqrt(data.length - 1));
     let gd = gridData(width, width, edge, edge, 1, data);
@@ -200,14 +208,14 @@ function plot_number(datas) {
       .enter().append("g")
       .attr("class", "row");
     let column = row.selectAll(".square")
-      .data(function(d) { return d; })
+      .data(function(d) {return d;})
       .enter().append("rect")
-      .attr("class","square")
-      .attr("x", function(d) { return d.x; })
-      .attr("y", function(d) { return d.y; })
-      .attr("width", function(d) { return d.width; })
-      .attr("height", function(d) { return d.height; })
-      .style("fill", function(d) { return d.enable?"#000":"#fff"; })
+      .attr("class", "square")
+      .attr("x", function(d) {return d.x;})
+      .attr("y", function(d) {return d.y;})
+      .attr("width", function(d) {return d.width;})
+      .attr("height", function(d) {return d.height;})
+      .style("fill", function(d) {return d.enable ? "#000" : "#fff";})
       .style("stroke", "#ccc");
   }
 }
@@ -216,5 +224,7 @@ module.exports = {
   plot2d_mlp: plot2d_mlp,
   plot2d_mlp_train: plot2d_mlp_train,
   plot2d_mlp_test: plot2d_mlp_test,
-  plot_number: plot_number
+  plot_number: plot_number,
+  plot_number_train: plot_number_train,
+  plot_number_test: plot_number_test
 }

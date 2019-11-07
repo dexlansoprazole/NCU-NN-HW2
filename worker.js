@@ -22,7 +22,7 @@ function loadData(arg) {
       data.push(d);
     }
   }
-  return data;
+  return {data: data, isNumber: isNumber};
 }
 
 function splitData(data) {
@@ -86,14 +86,22 @@ function main(data, iter, lr, th, nh) {
 
   let res_plots = null;
   let res_results = new Array();
-  if (net.ni == 3 && net.nh == 3){
-    res_plots = new Array();
+  if (!isNumber){
+    if (net.ni == 3 && net.nh == 3 && classes.length < 3) {
+      res_plots = new Array();
+      for(let i = 0; i <　net.ws.length; i++){
+        res_plots.push(mlp_res_plot(i));
+      }
+    }
     for(let i = 0; i <　net.ws.length; i++){
-      res_plots.push(mlp_res_plot(i));
+      res_results.push({w: net.ws[i], res_test: {trainSet: mlp_res_result(dataset.train, i, dataset_ori.train), testSet: mlp_res_result(dataset.test, i, dataset_ori.test)}});
     }
   }
-  for(let i = 0; i <　net.ws.length; i++){
-      res_results.push({w: net.ws[i], res_test: {trainSet: mlp_res_result(dataset.train, i), testSet: mlp_res_result(dataset.test, i)}});
+  else {
+    res_plots = {train: dataset_ori.train, test: dataset_ori.test};
+    for (let i = 0; i < net.ws.length; i++) {
+      res_results.push({w: net.ws[i], res_test: {trainSet: mlp_res_result(dataset.train, i, dataset_ori.train), testSet: mlp_res_result(dataset.test, i, dataset_ori.test)}});
+    }
   }
   return {plot: res_plots, result: res_results};
 }
@@ -148,7 +156,7 @@ function mlp_res_plot(i_frame) {
   return [dataset, fn, fn_final, y_trans];
 }
 
-function mlp_res_result(data = dataset.test, i_frame, data_ori=dataset_ori.test){
+function mlp_res_result(data = dataset.test, i_frame, data_ori){
   let w = net.ws[i_frame];
   let wi = w.wi;
   let wo = w.wo;
@@ -171,7 +179,7 @@ ipcRenderer.on('start', function(evt, arg) {
 ipcRenderer.on('test_num', function(evt, arg) {
   let res_num = new Array();
   for(let i = 0; i <　net.ws.length; i++){
-    res_num.push({trainSet: mlp_res_result(dataset.train, i, dataset_ori.train), testSet: mlp_res_result(arg, i, arg)});
+    res_num.push({res_test: {trainSet: mlp_res_result(dataset.train, i, dataset_ori.train), testSet: mlp_res_result(arg, i, arg)}});
   }
   evt.sender.send('test_num_res', {dataset: {train: dataset_ori.train, test: arg}, res_num: res_num});
 });

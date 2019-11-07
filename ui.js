@@ -4,7 +4,7 @@ const fs = require('fs');
 const plot = require('./modules/plot');
 var isNumber = false;
 var dataset_path = './dataset/perceptron1.txt';
-var data = null;
+var inputRes = null;
 var data_num = null;
 
 ipcRenderer.on('log', function(evt, arg){
@@ -12,13 +12,13 @@ ipcRenderer.on('log', function(evt, arg){
 });
 
 readFile(dataset_path, 'perceptron1.txt');
-ipcRenderer.on('input_res', function(evt, arg){
-  data = arg;
-  console.log(data);
+ipcRenderer.on('input_res', function(evt, arg) {
+  inputRes = arg;
+  console.log(inputRes.data);
 });
 
 ipcRenderer.on('input_num_res', function(evt, arg){
-  data_num = arg;
+  data_num = arg.data;
   console.log(data_num);
   $('#btnTest').removeClass('disabled');
 });
@@ -31,7 +31,8 @@ document.addEventListener("keydown", function(e) {
   }
 });
 
-$('#btnStart').click(function () {
+$('#btnStart').click(function() {
+  isNumber = inputRes.isNumber;
   clear();
   $("#col-range").children().remove();
   toggleLoading();
@@ -39,10 +40,11 @@ $('#btnStart').click(function () {
   let lr = parseFloat($('#in_lr').val());
   let th = parseFloat($('#in_th').val());
   let nh = parseInt($('#in_nh').val());
-  if(data == null)
+
+  if (inputRes.data == null || inputRes.data == '')
     showAlert('danger', 'Error', 'Invalid dataset');
   else
-    ipcRenderer.send('start', [data, iter, lr, th, nh]);
+    ipcRenderer.send('start', [inputRes.data, iter, lr, th, nh]);
 });
 
 $('.dropdown-item-num').click(function() {
@@ -76,7 +78,7 @@ $('#btnTest').click(function () {
     
     if(data_num != null){
       console.log(data_num);
-      if(data_num[0].length == data[0].length)
+      if (data_num[0].length == inputRes.data[0].length)
         ipcRenderer.send('test_num', data_num);
       else
         showAlert('danger', 'Error', 'Invalid input');
@@ -111,13 +113,12 @@ function readFile(filepath, filename) {
   $('#inputFile-label').html(filename);
   dataset_path = filepath;
   let fileString = fs.readFileSync(dataset_path, "UTF-8");
+  let isNum = false;
   if(filename == 'Number.txt')
-    isNumber = true;
-  else
-    isNumber = false;
-  $('#row-num').toggleClass('d-none', !isNumber);
+    isNum = true;
+  $('#row-num').toggleClass('d-none', !isNum);
   $('#btnTest').addClass('disabled');
-  ipcRenderer.send('input', {fileString: fileString, isNumber: isNumber});
+  ipcRenderer.send('input', {fileString: fileString, isNumber: isNum});
 }
 
 function clear() {
@@ -131,11 +132,13 @@ function clear() {
 
 function updateResult(res_plots, res_results, i_frame=0) {
   clear();
-  if(!isNumber)
-    $("#plot-num").children().remove();
+  if (!isNumber) {
+    $("#plot-train-num").children().remove();
+    $("#plot-test-num").children().remove();
+  }
 
   // update plot
-  if (res_plots != null)
+  if (res_plots != null && !isNumber)
     plot.plot2d_mlp(...res_plots[i_frame]);
   else{
     $('#plot-train').html('<h3>Train</h3>');
@@ -180,9 +183,9 @@ function updateResult(res_plots, res_results, i_frame=0) {
   }
 }
 
-function updateNumber(dataset, res_num, i_frame = $('#range').val()) {
-  $('.pred').html('');
-  let results = {train: res_num[i_frame].trainSet.results, test: res_num[i_frame].testSet.results};
+function updateNumber(dataset, result, i_frame = $('#range').val()) {
+  $('.pred').remove();
+  let results = {train: result[i_frame].res_test.trainSet.results, test: result[i_frame].res_test.testSet.results};
   let classes = [...new Set(dataset.train.map(function (v) { return v[v.length - 1] }))];
   let i_active = {train: $('#carousel-train-num .active').index('#carousel-train-num .carousel-item'), test: $('#carousel-test-num .active').index('#carousel-test-num .carousel-item')};
   let predict = {train: null, test: null};
@@ -232,15 +235,36 @@ ipcRenderer.on('finished', function(evt, arg){
   $('#col-range').html($range);
 
   updateResult(arg.plot, arg.result, arg.result.length - 1);
+  if (isNumber) {
+    $carousel = carousels(arg.plot, arg.result);
+    $('#plot-train-num').html($carousel.train);
+    $('#plot-test-num').html($carousel.test);
+    $('#range').unbind('input', updateNumberHandler);
+    $('#range').bind('input', {dataset: arg.plot, result: arg.result}, updateNumberHandler);
+    plot.plot_number(arg.plot);
+    updateNumber(arg.plot, arg.result, arg.result.length - 1);
+  }
+
   toggleLoading();
   $('#btnTest').removeClass('disabled');
 });
 
 function updateNumberHandler(evt) {
-  updateNumber(evt.data.dataset, evt.data.res_num);
+  updateNumber(evt.data.dataset, evt.data.result);
 }
 
-ipcRenderer.on('test_num_res', function(evt, arg){
+ipcRenderer.on('test_num_res', function(evt, arg) {
+  $carousel = carousels(arg.dataset, arg.res_num)
+
+  $('#plot-train-num').html($carousel.train);
+  $('#plot-test-num').html($carousel.test);
+  $('#range').unbind('input', updateNumberHandler);
+  $('#range').bind('input', {dataset: arg.dataset, result: arg.res_num}, updateNumberHandler);
+  plot.plot_number(arg.dataset);
+  updateNumber(arg.dataset, arg.res_num);
+});
+
+function carousels(dataset, result) {
   // create carousel
   let $carousel = {
     train: $('<div id="carousel-train-num" class="carousel slide" data-ride="carousel"></div>'),
@@ -251,15 +275,15 @@ ipcRenderer.on('test_num_res', function(evt, arg){
     test: $('<div class="carousel-inner"></div>')
   };
   let carouselItems = {train: new Array(), test: new Array()};
-  for(let i = 0; i < arg.dataset.train.length; i++){
+  for (let i = 0; i < dataset.train.length; i++) {
     let $carouselItem = $('<div class="carousel-item"  id="carouse-item-train-num' + i + '"></div>');
-    if(i == 0)
+    if (i == 0)
       $carouselItem.addClass('active');
     carouselItems.train.push($carouselItem);
   }
-  for(let i = 0; i < arg.dataset.test.length; i++){
+  for (let i = 0; i < dataset.test.length; i++) {
     let $carouselItem = $('<div class="carousel-item"  id="carouse-item-test-num' + i + '"></div>');
-    if(i == 0)
+    if (i == 0)
       $carouselItem.addClass('active');
     carouselItems.test.push($carouselItem);
   }
@@ -268,21 +292,21 @@ ipcRenderer.on('test_num_res', function(evt, arg){
   $carousel.train.append($carouselInner.train);
   $carousel.test.append($carouselInner.test);
 
-  if(arg.dataset.train.length > 1){
+  if (dataset.train.length > 1) {
     let $carousel_control_prev = $('<a class="carousel-control-prev" href="#carousel-train-num" role="button" data-slide="prev"><span class="carousel-control-prev-icon"><span class="sr-only">Previous</span></span></a>');
     let $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-train-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
     $carousel.train.append($carousel_control_prev);
     $carousel.train.append($carousel_control_next);
     $carousel.train.unbind('slid.bs.carousel', updateNumberHandler);
-    $carousel.train.bind('slid.bs.carousel', {dataset: arg.dataset, res_num: arg.res_num}, updateNumberHandler);
+    $carousel.train.bind('slid.bs.carousel', {dataset: dataset, result: result}, updateNumberHandler);
   }
-  if(arg.dataset.test.length > 1){
+  if (dataset.test.length > 1) {
     let $carousel_control_prev = $('<a class="carousel-control-prev" href="#carousel-test-num" role="button" data-slide="prev"><span class="carousel-control-prev-icon"><span class="sr-only">Previous</span></span></a>');
     let $carousel_control_next = $('<a class="carousel-control-next" href="#carousel-test-num" role="button" data-slide="next"><span class="carousel-control-next-icon"><span class="sr-only">Next</span></span></a>');
     $carousel.test.append($carousel_control_prev);
     $carousel.test.append($carousel_control_next);
     $carousel.test.unbind('slid.bs.carousel', updateNumberHandler);
-    $carousel.test.bind('slid.bs.carousel', {dataset: arg.dataset, res_num: arg.res_num}, updateNumberHandler);
+    $carousel.test.bind('slid.bs.carousel', {dataset: dataset, result: result}, updateNumberHandler);
   }
 
   $carousel.train.carousel({
@@ -292,10 +316,5 @@ ipcRenderer.on('test_num_res', function(evt, arg){
     interval: false
   });
 
-  $('#plot-train-num').html($carousel.train);
-  $('#plot-test-num').html($carousel.test);
-  $('#range').unbind('input', updateNumberHandler);
-  $('#range').bind('input', {dataset: arg.dataset, res_num: arg.res_num}, updateNumberHandler);
-  plot.plot_number(arg.dataset);
-  updateNumber(arg.dataset, arg.res_num, arg.res_num.length - 1);
-});
+  return $carousel;
+}

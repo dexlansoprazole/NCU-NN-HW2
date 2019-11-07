@@ -121,7 +121,7 @@ class MLP {
     return error;
   }
 
-  test(data, wi, wo, data_ori=data) {
+  test(data, wi, wo, data_ori) {
     let acc = 0.0;
     let rmse = 0.0;
     let results = new Array();
