@@ -29,10 +29,10 @@ function splitData(data) {
   let train = new Array();
   let test = new Array();
   if (data.length > 4) {
-    let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
+    let classes = [...new Set(data.map(function(v) {return v[v.length - 1]}))];
     let data_c = [];
-    for(let i = 0;i < classes.length; i++)
-      data_c.push(data.filter(function (v) { return v[v.length - 1] == classes[i] }));
+    for (let i = 0; i < classes.length; i++)
+      data_c.push(data.filter(function(v) {return v[v.length - 1] == classes[i]}));
     // Split data for each class
     for (let k = 0; k < data_c.length; k++) {
       var nums = Array.from(Array(Math.round(data_c[k].length)).keys()),
@@ -59,19 +59,31 @@ function splitData(data) {
 }
 
 function main(data, iter, lr, th, nh) {
-  let classes = [...new Set(data.map(function (v) { return v[v.length - 1] }))];
+  let classes = [...new Set(data.map(function(v) {return v[v.length - 1]}))];
   logger('class_ori: %o', classes);
   dataset_ori = splitData(data.map(function(arr) {return arr.slice();}));
 
   // Normalization
+  let data_norm = new Array();
   for (let i = 0; i < data.length; i++) {
-    for(let j = 0; j < classes.length; j++){
-      if(data[i][data[i].length-1] == classes[j]){
-        data[i][data[i].length-1] = j / (classes.length - 1);
+    data_norm.push(new Array());
+
+    for (let j = 0; j < data[i].length - 1; j++) {
+      let feat = data.map(v => v[j]);
+      let max = Math.max(...feat);
+      let min = Math.min(...feat);
+      let z = (max - min) ? ((data[i][j] - min) / (max - min)) : data[i][j];
+      data_norm[i].push(z);
+    }
+
+    for (let j = 0; j < classes.length; j++) {
+      if (data[i][data[i].length - 1] == classes[j]) {
+        data_norm[i].push(j / (classes.length - 1));
         break;
       }
     }
   }
+  data = data_norm;
 
   dataset = splitData(data);
   logger('data: %o', data);
@@ -79,21 +91,23 @@ function main(data, iter, lr, th, nh) {
   let output_size = 1;
   let input_size = dataset.train[0].length - output_size;
   net = new MLP(input_size, nh, output_size);
-  // ui.toggleLoading();
   net.train(dataset.train, iter, lr, th);
   let w = net.ws[net.ws.length - 1];
   logger("w=%o", w);
 
   let res_plots = null;
   let res_results = new Array();
-  if (!isNumber){
-    if (net.ni == 3 && net.nh == 3 && classes.length < 3) {
+  if (!isNumber) {
+    if (net.ni == 3) {
       res_plots = new Array();
-      for(let i = 0; i <　net.ws.length; i++){
-        res_plots.push(mlp_res_plot(i));
-      }
+      if (net.nh == 3 && classes.length < 3)
+        for (let i = 0; i < net.ws.length; i++)
+          res_plots.push(mlp_res_plot(i));
+      else
+        for (let i = 0; i < net.ws.length; i++)
+          res_plots.push([dataset, null, null, null]);
     }
-    for(let i = 0; i <　net.ws.length; i++){
+    for (let i = 0; i < net.ws.length; i++) {
       res_results.push({w: net.ws[i], res_test: {trainSet: mlp_res_result(dataset.train, i, dataset_ori.train), testSet: mlp_res_result(dataset.test, i, dataset_ori.test)}});
     }
   }
@@ -134,7 +148,7 @@ function mlp_res_plot(i_frame) {
     y_trans.train.push(ys);
   });
 
-  dataset.test.forEach(function (d) {
+  dataset.test.forEach(function(d) {
     let ys = new Array();
     let inputs = d.slice(0, -1);
     let outputs = d.slice(-1);
@@ -156,7 +170,7 @@ function mlp_res_plot(i_frame) {
   return [dataset, fn, fn_final, y_trans];
 }
 
-function mlp_res_result(data = dataset.test, i_frame, data_ori){
+function mlp_res_result(data = dataset.test, i_frame, data_ori) {
   let w = net.ws[i_frame];
   let wi = w.wi;
   let wo = w.wo;
@@ -178,7 +192,7 @@ ipcRenderer.on('start', function(evt, arg) {
 
 ipcRenderer.on('test_num', function(evt, arg) {
   let res_num = new Array();
-  for(let i = 0; i <　net.ws.length; i++){
+  for (let i = 0; i < net.ws.length; i++) {
     res_num.push({res_test: {trainSet: mlp_res_result(dataset.train, i, dataset_ori.train), testSet: mlp_res_result(arg, i, arg)}});
   }
   evt.sender.send('test_num_res', {dataset: {train: dataset_ori.train, test: arg}, res_num: res_num});

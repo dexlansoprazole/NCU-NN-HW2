@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs');
 const plot = require('./modules/plot');
 var isNumber = false;
+var isRunning = false;
 var path_dir = "./dataset";
 var dataset_path = './dataset/perceptron1.txt';
 var inputRes = null;
@@ -11,8 +12,6 @@ var data_num = null;
 document.addEventListener("keydown", function(e) {
   if (e.which === 123) {
     require('electron').remote.getCurrentWindow().toggleDevTools();
-  } else if (e.which === 116) {
-    location.reload();
   }
 });
 
@@ -189,24 +188,24 @@ function showAlert(level, title, msg) {
   });
 }
 
-function toggleLoading() {
-  $("#spinner-start").toggleClass('d-none');
-}
-
 $('#btnStart').click(function() {
-  isNumber = inputRes.isNumber;
-  clear();
-  $("#col-range").children().remove();
-  toggleLoading();
-  let iter = parseInt($('#in_iter').val());
-  let lr = parseFloat($('#in_lr').val());
-  let th = parseFloat($('#in_th').val());
-  let nh = parseInt($('#in_nh').val());
+  if (!$(this).hasClass('disabled')) {
+    isNumber = inputRes.isNumber;
+    clear();
+    $("#col-range").children().remove();
+    let iter = parseInt($('#in_iter').val());
+    let lr = parseFloat($('#in_lr').val());
+    let th = parseFloat($('#in_th').val());
+    let nh = parseInt($('#in_nh').val());
 
-  if (inputRes.data == null || inputRes.data == '')
-    showAlert('danger', 'Error', 'Invalid dataset');
-  else
-    ipcRenderer.send('start', [inputRes.data, iter, lr, th, nh]);
+    if (inputRes.data == null || inputRes.data == '')
+      showAlert('danger', 'Error', 'Invalid dataset');
+    else {
+      ipcRenderer.send('start', [inputRes.data, iter, lr, th, nh]);
+      $(this).addClass('disabled');
+      $("#spinner-start").removeClass('d-none');
+    }
+  }
 });
 
 $('.dropdown-item-num').click(function() {
@@ -289,8 +288,9 @@ ipcRenderer.on('finished', function(evt, arg) {
     updateNumber(arg.plot, arg.result, arg.result.length - 1);
   }
 
-  toggleLoading();
+  $("#spinner-start").addClass('d-none');
   $('#btnTest').removeClass('disabled');
+  $('#btnStart').removeClass('disabled');
 });
 
 ipcRenderer.on('test_num_res', function(evt, arg) {

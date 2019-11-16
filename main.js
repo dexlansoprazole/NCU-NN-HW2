@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron')
+const {app, BrowserWindow, Menu, ipcMain, globalShortcut} = require('electron')
 const path = require('path')
 require('electron-reload')(__dirname);
 
@@ -9,21 +9,31 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
-    webPreferences: { nodeIntegration: true }
+    webPreferences: {nodeIntegration: true}
   })
   mainWindow.loadFile('ui.html')
   // mainWindow.webContents.openDevTools()
 
   workerWindow = new BrowserWindow({
     show: false,
-    webPreferences: { nodeIntegration: true }
+    webPreferences: {nodeIntegration: true},
   });
   workerWindow.loadFile('worker.html');
   // workerWindow.webContents.openDevTools()
-  
-  mainWindow.on('closed', function () {
+
+  globalShortcut.register('f5', function() {
+    mainWindow.reload();
+    workerWindow.close();
+    workerWindow = new BrowserWindow({
+      show: false,
+      webPreferences: {nodeIntegration: true},
+    });
+    workerWindow.loadFile('worker.html');
+  })
+
+  mainWindow.on('closed', function() {
     mainWindow = null;
-    if(workerWindow != null)
+    if (workerWindow != null)
       workerWindow.close();
   })
 
@@ -60,14 +70,14 @@ app.on('ready', function() {
   ipcMain.on('test_num_res', (evt, arg) => {
     mainWindow.webContents.send('test_num_res', arg);
   })
-  
+
   createWindow();
 })
 
-app.on('window-all-closed', function () {
+app.on('window-all-closed', function() {
   if (process.platform !== 'darwin') app.quit()
 })
 
-app.on('activate', function () {
+app.on('activate', function() {
   if (mainWindow === null) createWindow()
 })
